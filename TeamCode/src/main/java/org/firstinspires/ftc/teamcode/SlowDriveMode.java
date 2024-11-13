@@ -26,6 +26,13 @@ public class SlowDriveMode extends LinearOpMode {
         rightFrontDrive = hardwareMap.get(DcMotor.class, "right_front");
         rightBackDrive = hardwareMap.get(DcMotor.class, "right_back");
 
+        int[] startPositions = {
+                leftBackDrive.getCurrentPosition(),
+                rightBackDrive.getCurrentPosition(),
+                leftFrontDrive.getCurrentPosition(),
+                rightFrontDrive.getCurrentPosition()
+        };
+
         // Reverse the direction (flip FORWARD <-> REVERSE ) of any wheel that runs backward
         leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
         leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
@@ -41,6 +48,13 @@ public class SlowDriveMode extends LinearOpMode {
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
+            int[] positions = {
+                    leftBackDrive.getCurrentPosition() - startPositions[0],
+                    rightBackDrive.getCurrentPosition() - startPositions[1],
+                    leftFrontDrive.getCurrentPosition() - startPositions[2],
+                    rightFrontDrive.getCurrentPosition() - startPositions[3]
+            };
+
             double max;
 
             // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
@@ -96,8 +110,8 @@ public class SlowDriveMode extends LinearOpMode {
             telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.addData("Front left/Right", "%4.2f, %4.4f", leftFrontPower, rightFrontPower);
             telemetry.addData("Back  left/Right", "%4.2f, %4.4f", leftBackPower, rightBackPower);
-            telemetry.addData("Back Encoder l/r", "%d, %d", leftBackDrive.getCurrentPosition(), rightBackDrive.getCurrentPosition());
-            telemetry.addData("Front Encoder l/r", "%d, %d", leftBackDrive.getCurrentPosition(), rightBackDrive.getCurrentPosition());
+            telemetry.addData("Back Encoder l/r", "%d, %d", positions[0], positions[1]);
+            telemetry.addData("Front Encoder l/r", "%d, %d", positions[2], positions[3]);
             telemetry.update();
         }
     }}
