@@ -96,6 +96,8 @@ public class SlowDriveMode extends LinearOpMode {
             telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.addData("Front left/Right", "%4.2f, %4.4f", leftFrontPower, rightFrontPower);
             telemetry.addData("Back  left/Right", "%4.2f, %4.4f", leftBackPower, rightBackPower);
+            telemetry.addData("Back Encoder l/r", "%d, %d", leftBackDrive.getCurrentPosition(), rightBackDrive.getCurrentPosition());
+            telemetry.addData("Front Encoder l/r", "%d, %d", leftBackDrive.getCurrentPosition(), rightBackDrive.getCurrentPosition());
             telemetry.update();
         }
     }}
