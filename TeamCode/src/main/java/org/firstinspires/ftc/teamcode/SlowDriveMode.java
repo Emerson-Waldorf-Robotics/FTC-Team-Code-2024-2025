@@ -50,9 +50,9 @@ public class SlowDriveMode extends LinearOpMode {
 
             // Combine the joystick requests for each axis-motion to determine each wheel's power.
             // Set up a variable for each drive wheel to save the power level for telemetry.
-            double leftFrontPower  = (axial + lateral + yaw)*2;
+            double leftFrontPower  = (axial + lateral + yaw);
             double rightFrontPower = axial - lateral - yaw;
-            double leftBackPower   = (axial - lateral + yaw)*2;
+            double leftBackPower   = (axial - lateral + yaw);
             double rightBackPower  = axial + lateral - yaw;
 
             // Normalize the values so no wheel power exceeds 100%
@@ -96,6 +96,8 @@ public class SlowDriveMode extends LinearOpMode {
             telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.addData("Front left/Right", "%4.2f, %4.4f", leftFrontPower, rightFrontPower);
             telemetry.addData("Back  left/Right", "%4.2f, %4.4f", leftBackPower, rightBackPower);
+            telemetry.addData("Back Encoder l/r", "%d, %d", leftBackDrive.getCurrentPosition(), rightBackDrive.getCurrentPosition());
+            telemetry.addData("Front Encoder l/r", "%d, %d", leftBackDrive.getCurrentPosition(), rightBackDrive.getCurrentPosition());
             telemetry.update();
         }
     }}
