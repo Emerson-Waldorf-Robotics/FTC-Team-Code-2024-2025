@@ -57,10 +57,10 @@ public class SlowDriveMode extends LinearOpMode {
             double leftBackPower   = (axial - lateral + yaw);
             double rightBackPower  = axial + lateral - yaw;
             */
-            double leftFrontPower  = (axial + lateral - yaw);
-            double rightFrontPower = axial + lateral - yaw;
-            double leftBackPower   = (axial - lateral + yaw);
-            double rightBackPower  = axial - lateral + yaw;
+            double leftFrontPower  = (axial - lateral + yaw);
+            double rightFrontPower = axial - lateral + yaw;
+            double leftBackPower   = (axial + lateral - yaw);
+            double rightBackPower  = axial + lateral - yaw;
 
 
             // Normalize the values so no wheel power exceeds 100%
