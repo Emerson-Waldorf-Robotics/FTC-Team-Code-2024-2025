@@ -15,6 +15,7 @@ public class SlowDriveMode extends LinearOpMode {
     private DcMotor leftBackDrive = null;
     private DcMotor rightFrontDrive = null;
     private DcMotor rightBackDrive = null;
+    private DcMotor extendMotor = null;
 
     @Override
     public void runOpMode() {
@@ -25,19 +26,21 @@ public class SlowDriveMode extends LinearOpMode {
         leftBackDrive  = hardwareMap.get(DcMotor.class, "left_back");
         rightFrontDrive = hardwareMap.get(DcMotor.class, "right_front");
         rightBackDrive = hardwareMap.get(DcMotor.class, "right_back");
+        extendMotor = hardwareMap.get(DcMotor.class, "extend_motor");
 
         int[] startPositions = {
                 leftBackDrive.getCurrentPosition(),
                 rightBackDrive.getCurrentPosition(),
                 leftFrontDrive.getCurrentPosition(),
-                rightFrontDrive.getCurrentPosition()
+                rightFrontDrive.getCurrentPosition(),
+                extendMotor.getCurrentPosition()
         };
 
-        // Reverse the direction (flip FORWARD <-> REVERSE ) of any wheel that runs backward
-        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
-        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
+
 
         // Wait for the game to start (driver presses START)
         telemetry.addData("Status", "Initialized");
@@ -72,9 +75,11 @@ public class SlowDriveMode extends LinearOpMode {
             double rightBackPower  = axial + lateral - yaw;
             */
             double leftFrontPower  = axial + lateral + yaw;
-            double rightFrontPower = axial + lateral - yaw;
-            double leftBackPower   = axial - lateral - yaw;
-            double rightBackPower  = axial - lateral + yaw;
+            double rightFrontPower = axial - lateral - yaw;
+            double leftBackPower   = axial + lateral + yaw;
+            double rightBackPower  = axial - lateral - yaw;
+
+            // double extendMotorPower = axial + lateral + yaw;
 
 
             // Normalize the values so no wheel power exceeds 100%
@@ -82,13 +87,16 @@ public class SlowDriveMode extends LinearOpMode {
             max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
             max = Math.max(max, Math.abs(leftBackPower));
             max = Math.max(max, Math.abs(rightBackPower));
-            max *= 2;
+            // max = Math.max(max, Math.abs(extendMotorPower));
+            max *= 1;
 
             if (max > 1.0) {
                 leftFrontPower  /= max;
                 rightFrontPower /= max;
                 leftBackPower   /= max;
                 rightBackPower  /= max;
+
+                // extendMotorPower /= max;
             }
 
             // This is test code:
@@ -113,6 +121,18 @@ public class SlowDriveMode extends LinearOpMode {
             rightFrontDrive.setPower(rightFrontPower);
             leftBackDrive.setPower(leftBackPower);
             rightBackDrive.setPower(rightBackPower);
+
+
+            if (gamepad2.dpad_up) {
+                extendMotor.setPower(0.5);
+            }
+            if (gamepad2.dpad_down) {
+                extendMotor.setPower(-0.5);
+            }
+            else {
+                extendMotor.setPower(0);
+            }
+            
 
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());
