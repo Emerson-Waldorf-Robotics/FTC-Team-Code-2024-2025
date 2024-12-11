@@ -39,8 +39,11 @@ public class SlowDriveMode extends LinearOpMode {
         rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
 
+        //DcMotor.RunMode.
+
         // Wait for the game to start (driver presses START)
         telemetry.addData("Status", "Initialized");
+        telemetry.addData("Mode", "%s", leftFrontDrive.getMode().toString());
         telemetry.update();
 
         waitForStart();
