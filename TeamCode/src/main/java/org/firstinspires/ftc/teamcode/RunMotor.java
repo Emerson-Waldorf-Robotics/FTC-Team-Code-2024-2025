@@ -8,6 +8,19 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 public class RunMotor extends LinearOpMode
 {
     private DcMotor motor = null;
+    double moved = 0;
+
+    void deg30(double power){
+        int cpos = motor.getCurrentPosition();
+        motor.setPower(power);
+        while (opModeIsActive()){
+            if (Math.abs(motor.getCurrentPosition() - cpos) > 30){
+                break;
+            }
+        }
+        motor.setPower(0);
+        moved = Math.abs(motor.getCurrentPosition() - cpos);
+    }
 
     @Override public void runOpMode()
     {
@@ -25,53 +38,38 @@ public class RunMotor extends LinearOpMode
         boolean lb = false, lb2 = false;
         boolean running = false;
 
+        float motorSpeed = 0.6f;
+
         telemetry.addData(">", "Touch START to start OpMode");
         telemetry.update();
         waitForStart();
 
-        while (opModeIsActive())
-        {
-
-            if (gamepad1.x){
-                motor.setPower(gamepad1.left_stick_y);
-                if (!gamepad1.y){
+        while (opModeIsActive()) {
+            {
+                if (gamepad1.a && !lb2) {
+                    lb2 = true;
+                    deg30(-motorSpeed);
+                    continue;
+                }
+                if (!gamepad1.a) {
+                    lb2 = false;
+                }
+            }
+            {
+                if (gamepad1.b && !lb) {
+                    lb = true;
+                    deg30(motorSpeed);
+                    continue;
+                }
+                if (!gamepad1.a) {
                     lb = false;
                 }
-                if (gamepad1.y && !lb) {
-                    lb = true;
-                    speed = gamepad1.left_stick_y;
-                }
-            }
-
-            if (gamepad1.a && !lb2) {
-                /*
-                lb2 = true;
-                if (running){
-                    running = false;
-                    motor.setPower(0);
-                }else{
-                    running = true;
-                    motor.setPower(speed);
-                }
-                 */
-                int cpos = motor.getCurrentPosition();
-                motor.setPower(-0.2);
-                while (opModeIsActive()){
-                    if (motor.getCurrentPosition() > cpos+30){
-                        break;
-                    }
-                }
-                motor.setPower(0);
-                lb2 = true;
-                continue;
-            }
-            if (!gamepad1.a){
-                lb2 = false;
             }
 
             // Tell the driver what we see, and what to do.
             telemetry.addData("Motor Position", "%d", motor.getCurrentPosition());
             telemetry.addData("Motor Power", "%f", motor.getPower());
+            telemetry.addData("Moved", moved);
             telemetry.update();
 
             sleep(10);
