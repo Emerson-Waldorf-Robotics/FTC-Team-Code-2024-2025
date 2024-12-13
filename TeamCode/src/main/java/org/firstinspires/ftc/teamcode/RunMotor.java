@@ -32,7 +32,10 @@ public class RunMotor extends LinearOpMode
         // to 'get' must match the names assigned during the robot configuration.
         // step (using the FTC Robot Controller app on the phone).
         motor  =  hardwareMap.get(DcMotor.class, "test_motor");
-        int spos = motor.getCurrentPosition();
+        // Reset the encoder
+        motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         float speed = 0;
         // Last button states
         boolean lb = false, lb2 = false;
@@ -48,7 +51,7 @@ public class RunMotor extends LinearOpMode
             {
                 if (gamepad1.a && !lb2) {
                     lb2 = true;
-                    deg30(-motorSpeed);
+                    motor.setTargetPosition(motor.getCurrentPosition()-30);
                     continue;
                 }
                 if (!gamepad1.a) {
@@ -58,7 +61,7 @@ public class RunMotor extends LinearOpMode
             {
                 if (gamepad1.b && !lb) {
                     lb = true;
-                    deg30(motorSpeed);
+                    motor.setTargetPosition(motor.getCurrentPosition()+30);
                     continue;
                 }
                 if (!gamepad1.a) {
