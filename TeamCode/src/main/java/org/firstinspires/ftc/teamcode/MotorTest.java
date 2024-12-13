@@ -22,7 +22,7 @@ public class MotorTest extends LinearOpMode
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must match the names assigned during the robot configuration.
         // step (using the FTC Robot Controller app on the phone).
-        motor  =  hardwareMap.get(DcMotorEx.class, "motor");
+        motor  =  hardwareMap.get(DcMotor.class, "extend_motor");
 
         telemetry.addData(">", "Touch START to start OpMode");
         telemetry.update();
