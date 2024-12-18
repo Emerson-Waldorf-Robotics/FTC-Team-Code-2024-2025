@@ -8,6 +8,31 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 public class RunMotor extends LinearOpMode
 {
     private DcMotor motor = null;
+    double moved = 0;
+    int degrees = 20;
+
+    void deg30(double power){
+        int spos = motor.getCurrentPosition();
+        int cpos;
+        int last = 0;
+
+        motor.setPower(power);
+        while (opModeIsActive()){
+            cpos = motor.getCurrentPosition();
+            //if (Math.abs(cpos - last) < 1){
+            //    break;
+            //}
+            moved = Math.abs(cpos - spos);
+            if (moved > degrees){
+                break;
+            }
+
+            telemetry.addData("Moved", "%f/%d", moved, degrees);
+            telemetry.update();
+            sleep(20);
+        }
+        motor.setPower(0);
+    }
 
     @Override public void runOpMode()
     {
@@ -19,54 +44,38 @@ public class RunMotor extends LinearOpMode
         // to 'get' must match the names assigned during the robot configuration.
         // step (using the FTC Robot Controller app on the phone).
         motor  =  hardwareMap.get(DcMotor.class, "test_motor");
-        int spos = motor.getCurrentPosition();
+
+        motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         float speed = 0;
         // Last button states
         boolean lb = false, lb2 = false;
-        boolean running = false;
+
+        float motorSpeed = 1f;
 
         telemetry.addData(">", "Touch START to start OpMode");
         telemetry.update();
         waitForStart();
 
-        while (opModeIsActive())
-        {
-
-            if (gamepad1.x){
-                motor.setPower(gamepad1.left_stick_y);
-                if (!gamepad1.y){
+        while (opModeIsActive()) {
+            {
+                if (gamepad1.a && !lb2) {
+                    lb2 = true;
+                    deg30(-motorSpeed);
+                    continue;
+                }
+                if (!gamepad1.a) {
+                    lb2 = false;
+                }
+            }
+            {
+                if (gamepad1.b && !lb) {
+                    lb = true;
+                    deg30(motorSpeed);
+                    continue;
+                }
+                if (!gamepad1.a) {
                     lb = false;
                 }
-                if (gamepad1.y && !lb) {
-                    lb = true;
-                    speed = gamepad1.left_stick_y;
-                }
-            }
-
-            if (gamepad1.a && !lb2) {
-                /*
-                lb2 = true;
-                if (running){
-                    running = false;
-                    motor.setPower(0);
-                }else{
-                    running = true;
-                    motor.setPower(speed);
-                }
-                 */
-                int cpos = motor.getCurrentPosition();
-                motor.setPower(-0.2);
-                while (opModeIsActive()){
-                    if (motor.getCurrentPosition() > cpos+30){
-                        break;
-                    }
-                }
-                motor.setPower(0);
-                lb2 = true;
-                continue;
-            }
-            if (!gamepad1.a){
-                lb2 = false;
             }
 
             // Tell the driver what we see, and what to do.
