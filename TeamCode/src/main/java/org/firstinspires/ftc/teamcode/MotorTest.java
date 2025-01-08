@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
-@TeleOp(name="Motor Test", group = "Tests")
+@TeleOp(name="Motor Test Manual", group = "Tests")
 public class MotorTest extends LinearOpMode
 {
     private DcMotor motor = null;
@@ -22,11 +22,14 @@ public class MotorTest extends LinearOpMode
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must match the names assigned during the robot configuration.
         // step (using the FTC Robot Controller app on the phone).
-        motor  =  hardwareMap.get(DcMotor.class, "extend_motor");
+        motor  =  hardwareMap.get(DcMotorEx.class, "extend_horizontal");
+        motor.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
 
         telemetry.addData(">", "Touch START to start OpMode");
         telemetry.update();
         waitForStart();
+
+        motor.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
 
         while (opModeIsActive())
         {
