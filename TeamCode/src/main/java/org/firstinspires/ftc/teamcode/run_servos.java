@@ -69,7 +69,7 @@ public class run_servos extends LinearOpMode {
         // Wait for the start button
         telemetry.addData(">", "Press Start to Servo.");
         telemetry.addData("Position", "%f");
-        pivot.scaleRange(.2, .6);
+        pivot.scaleRange(0, .6);
         telemetry.update();
         waitForStart();
 
@@ -103,7 +103,7 @@ public class run_servos extends LinearOpMode {
             {
                 if (gamepad1.x && !lb3) {
                     lb3 = true;
-                    clamp.setPosition(1);
+                    clamp.setPosition(0.5);
                 }
                 if (!gamepad1.x) {
                     lb3 = false;
@@ -113,7 +113,7 @@ public class run_servos extends LinearOpMode {
             {
                 if (gamepad1.y && !lb4) {
                     lb4 = true;
-                    clamp.setPosition(0);
+                    clamp.setPosition(0.2);
                 }
                 if (!gamepad1.y) {
                     lb4 = false;
