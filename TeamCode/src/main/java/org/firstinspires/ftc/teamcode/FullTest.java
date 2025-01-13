@@ -76,7 +76,14 @@ public class FullTest extends LinearOpMode
         }
 
         motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        // SPEEEEEED
         motor.setVelocity(2000);
+    }
+
+    // Move the motor until too much resistance
+    void MoveMotorUntilResist(int where, @NonNull Servo motor){
+        motor.setPosition(where);
+
     }
 
     @Override public void runOpMode()
@@ -96,8 +103,9 @@ public class FullTest extends LinearOpMode
         pivot = hardwareMap.get(Servo.class, "pivot_servo");
         pivot.scaleRange(0, .6);
         clamp = hardwareMap.get(Servo.class, "clamp_servo");
+        clamp.scaleRange(0, 0.4);
         flip  = hardwareMap.get(Servo.class, "flipper_servo");
-        flip.scaleRange(0, .5);
+        flip.scaleRange(0.2, 1);
 
         telemetry.addData(">", "Touch START to start OpMode");
         telemetry.update();
@@ -109,12 +117,27 @@ public class FullTest extends LinearOpMode
             if (Qol.checkButton(gamepad1.a, "a")){
                 if (isTrue(action1.get("a"))) {
                     action1.put("a", false);
+                    // Linear extension
                     MoveMotor(EXTEND_DIFFERENCE, extend_horiz, true);
+                    // Pivot clamp arm
+                    pivot.setPosition(1);
                 } else {
                     action1.put("a", true);
                     MoveMotor(0, extend_horiz, true);
+                    pivot.setPosition(0);
                 }
             }
+
+            if (Qol.checkButton(gamepad1.b, "b")){
+                if (isTrue(action1.get("b"))) {
+                    action1.put("b", false);
+                    clamp.setPosition(1);
+                } else {
+                    action1.put("b", true);
+                    clamp.setPosition(0);
+                }
+            }
+
             if (Qol.checkButton(gamepad1.x, "x")){
                 if (isTrue(action1.get("x"))) {
                     action1.put("x", false);
@@ -122,15 +145,6 @@ public class FullTest extends LinearOpMode
                 } else {
                     action1.put("x", true);
                     MoveMotor(0, extend_vert, true);
-                }
-            }
-            if (Qol.checkButton(gamepad1.b, "b")){
-                if (isTrue(action1.get("b"))) {
-                    action1.put("b", false);
-                    pivot.setPosition(1);
-                } else {
-                    action1.put("b", true);
-                    pivot.setPosition(0);
                 }
             }
 
