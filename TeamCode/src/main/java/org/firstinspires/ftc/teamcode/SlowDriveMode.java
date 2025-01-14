@@ -15,7 +15,7 @@ public class SlowDriveMode extends LinearOpMode {
     private DcMotor leftBackDrive = null;
     private DcMotor rightFrontDrive = null;
     private DcMotor rightBackDrive = null;
-    private DcMotor extendMotor = null;
+    //private DcMotor extendMotor = null;
 
     @Override
     public void runOpMode() {
@@ -126,6 +126,7 @@ public class SlowDriveMode extends LinearOpMode {
             rightBackDrive.setPower(rightBackPower);
 
 
+            /*
             if (gamepad2.dpad_up) {
                 extendMotor.setPower(0.5);
             }
@@ -135,6 +136,7 @@ public class SlowDriveMode extends LinearOpMode {
             else {
                 extendMotor.setPower(0);
             }
+             */
             
 
             // Show the elapsed game time and wheel power.
