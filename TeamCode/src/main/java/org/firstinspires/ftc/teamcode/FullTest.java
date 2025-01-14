@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -56,6 +57,14 @@ public class FullTest extends LinearOpMode
     private Servo flip  = null;
 
 
+    // Driving stuff
+    private ElapsedTime runtime = new ElapsedTime();
+    private DcMotor leftFrontDrive = null;
+    private DcMotor leftBackDrive = null;
+    private DcMotor rightFrontDrive = null;
+    private DcMotor rightBackDrive = null;
+
+
     private final int EXTEND_DIFFERENCE = 500;
     private final int VERTICAL_DIFFERENCE = 1720;
 
@@ -85,6 +94,24 @@ public class FullTest extends LinearOpMode
 
     @Override public void runOpMode()
     {
+        // Driving stuff
+        leftFrontDrive  = hardwareMap.get(DcMotor.class, "left_front");
+        leftBackDrive  = hardwareMap.get(DcMotor.class, "left_back");
+        rightFrontDrive = hardwareMap.get(DcMotor.class, "right_front");
+        rightBackDrive = hardwareMap.get(DcMotor.class, "right_back");
+
+        int[] startPositions = {
+                leftBackDrive.getCurrentPosition(),
+                rightBackDrive.getCurrentPosition(),
+                leftFrontDrive.getCurrentPosition(),
+                rightFrontDrive.getCurrentPosition()
+        };
+
+        leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
+
 
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must match the names assigned during the robot configuration.
@@ -113,12 +140,16 @@ public class FullTest extends LinearOpMode
         telemetry.update();
 
         waitForStart();
+        runtime.reset();
 
         ResetPivot();
 
         while (opModeIsActive())
         {
 
+            drive(startPositions);
+
+            // TODO: Variable extension amount
             if (Qol.checkButton(gamepad1.a, "a")){
                 telemetry.addData("QOL", "Was pressed");
 
@@ -160,7 +191,7 @@ public class FullTest extends LinearOpMode
             }
 
             // Extend up
-            MoveMotor(VERTICAL_DIFFERENCE, extend_vert, true, 3500);
+            MoveMotor(VERTICAL_DIFFERENCE, extend_vert, true, 5000);
 
             sleep(200);
         } else {
@@ -246,5 +277,53 @@ public class FullTest extends LinearOpMode
 
     void Pivot(boolean up){
         pivot.setPosition(up ? 1 : 0);
+    }
+
+    void drive(int[] startPositions){
+        int[] positions = {
+                leftBackDrive.getCurrentPosition() - startPositions[0],
+                rightBackDrive.getCurrentPosition() - startPositions[1],
+                leftFrontDrive.getCurrentPosition() - startPositions[2],
+                rightFrontDrive.getCurrentPosition() - startPositions[3]
+        };
+
+        double max;
+
+        double axial   = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
+        double lateral =  gamepad1.left_stick_x;
+        double yaw     =  gamepad1.right_stick_x;
+
+        double leftFrontPower  = axial + lateral + yaw;
+        double rightFrontPower = axial - lateral - yaw;
+        double leftBackPower   = axial + lateral + yaw;
+        double rightBackPower  = axial - lateral - yaw;
+
+
+        // Normalize the values so no wheel power exceeds 100%
+        // This ensures that the robot maintains the desired motion.
+        max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
+        max = Math.max(max, Math.abs(leftBackPower));
+        max = Math.max(max, Math.abs(rightBackPower));
+        // max = Math.max(max, Math.abs(extendMotorPower));
+        max *= 1;
+
+        if (max > 1.0) {
+            leftFrontPower  /= max;
+            rightFrontPower /= max;
+            leftBackPower   /= max;
+            rightBackPower  /= max;
+        }
+
+        // Send calculated power to wheels
+        leftFrontDrive.setPower(leftFrontPower);
+        rightFrontDrive.setPower(rightFrontPower);
+        leftBackDrive.setPower(leftBackPower);
+        rightBackDrive.setPower(rightBackPower);
+
+        telemetry.addData("Status", "Run Time: " + runtime.toString());
+        telemetry.addData("Front left/Right", "%4.2f, %4.4f", leftFrontPower, rightFrontPower);
+        telemetry.addData("Back  left/Right", "%4.2f, %4.4f", leftBackPower, rightBackPower);
+        telemetry.addData("Back Encoder l/r", "%d, %d", positions[0], positions[1]);
+        telemetry.addData("Front Encoder l/r", "%d, %d", positions[2], positions[3]);
     }
 }
