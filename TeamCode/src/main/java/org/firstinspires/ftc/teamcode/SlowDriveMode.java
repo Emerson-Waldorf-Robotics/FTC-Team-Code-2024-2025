@@ -26,14 +26,14 @@ public class SlowDriveMode extends LinearOpMode {
         leftBackDrive  = hardwareMap.get(DcMotor.class, "left_back");
         rightFrontDrive = hardwareMap.get(DcMotor.class, "right_front");
         rightBackDrive = hardwareMap.get(DcMotor.class, "right_back");
-        extendMotor = hardwareMap.get(DcMotor.class, "extend_motor");
+        //extendMotor = hardwareMap.get(DcMotor.class, "extend_motor");
 
         int[] startPositions = {
                 leftBackDrive.getCurrentPosition(),
                 rightBackDrive.getCurrentPosition(),
                 leftFrontDrive.getCurrentPosition(),
                 rightFrontDrive.getCurrentPosition(),
-                extendMotor.getCurrentPosition()
+                //extendMotor.getCurrentPosition()
         };
 
         leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
