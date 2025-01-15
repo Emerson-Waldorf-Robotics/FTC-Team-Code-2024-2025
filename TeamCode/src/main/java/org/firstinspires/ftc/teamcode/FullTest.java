@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-import android.hardware.Camera;
-
 import androidx.annotation.NonNull;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -10,6 +8,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.sun.tools.javac.code.Type;
 
 import java.util.HashMap;
 
@@ -126,7 +125,7 @@ public class FullTest extends LinearOpMode
         clamp = hardwareMap.get(Servo.class, "clamp_servo");
         clamp.scaleRange(0.7, 0.85);
         flip  = hardwareMap.get(Servo.class, "flipper_servo");
-        flip.scaleRange(.2, 1);
+        flip.scaleRange(0.1, 1);
 
         //telemetry.addData(">", "Touch START to Initialize.");
         //telemetry.update();
@@ -134,6 +133,9 @@ public class FullTest extends LinearOpMode
 
         // Pivot reset position
         ResetPivot();
+
+        telemetry.addLine("Controller 1: Manipulator");
+        telemetry.addLine("Controller 2: Driver");
 
         telemetry.addData(">", "Touch START to Start OpMode.");
         telemetry.update();
@@ -195,8 +197,8 @@ public class FullTest extends LinearOpMode
         }
     }
 
-    void Extend_Hori(boolean in){
-        if (in){
+    void Extend_Hori(boolean goout){
+        if (goout){
             action1.put("a", true);
 
             // Open clamp
@@ -258,12 +260,118 @@ public class FullTest extends LinearOpMode
         }
     }
 
+    boolean isToggled(String value){
+        return isTrue(action1.get(value));
+    }
+
     void ResetPivot(){
         pivot.setPosition(0.82);
     }
 
     void Pivot(boolean up){
         pivot.setPosition(up ? 1 : 0);
+    }
+
+    int clampBetween(int low, int high, int value){
+        return Math.min(high, Math.max(low, value));
+    }
+    float clampBetween(float low, float high, float value){
+        return Math.min(high, Math.max(low, value));
+    }
+
+    void ManualExtend(){
+        boolean buttonState1  = false, buttonState2  = false;
+        boolean buttonToggle1 = false, buttonToggle2 = false;
+        action1.put("a", true);
+
+        // Open clamp
+        Clamp(false);
+
+        // Pivot down
+        //Pivot(false);
+
+        DcMotor.RunMode lastmode = extend_horiz.getMode();
+
+        extend_horiz.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        while (opModeIsActive()){
+            float val = gamepad1.left_stick_y;
+            int pos = extend_horiz.getCurrentPosition();
+            if (val == 0){
+                extend_horiz.setPower(0);
+            } else if (val < 0){
+                if (!(pos < 10)){
+                    extend_horiz.setPower(val);
+                }
+            } else {
+                if (!(pos > EXTEND_DIFFERENCE - 10)){
+                    extend_horiz.setPower(val);
+                }
+            }
+
+            // Stop if too far
+            if (pos > EXTEND_DIFFERENCE - 10){
+                if (extend_horiz.getPower() > 0) {
+                    extend_horiz.setPower(0);
+                }
+            }
+            // Stop if too close
+            if (pos < 10){
+                if (extend_horiz.getPower() < 0) {
+                    extend_horiz.setPower(0);
+                }
+            }
+
+            // Stop if A released
+            if (!gamepad1.a){
+                extend_horiz.setPower(0);
+                break;
+            }
+
+            // B button now for lowering the pivot
+            if (gamepad1.b){
+                if (!buttonToggle1){
+                    buttonToggle1 = true;
+
+                    if (!buttonState1){
+                        buttonState1 = true;
+
+                        Pivot(false);
+                    } else {
+                        buttonState1 = false;
+
+                        Pivot(true);
+                    }
+                }
+            } else {
+                buttonToggle1 = false;
+            }
+
+            // X button now for clamping
+            if (gamepad1.x){
+                if (!buttonToggle2){
+                    buttonToggle2 = true;
+
+                    if (!buttonState2){
+                        buttonState2 = true;
+
+                        Clamp(true);
+                    } else {
+                        buttonState2 = false;
+
+                        Clamp(false);
+                    }
+                }
+            } else {
+                buttonToggle2 = false;
+            }
+        }
+        Clamp(true);
+
+        extend_horiz.setMode(lastmode);
+
+        Extend_Hori(false);
+
+        action1.put("a", false);
     }
 
     void drive(@NonNull int[] startPositions){
@@ -293,6 +401,8 @@ public class FullTest extends LinearOpMode
         max = Math.max(max, Math.abs(leftBackPower));
         max = Math.max(max, Math.abs(rightBackPower));
 
+        max *= gamepad2.left_trigger*2+1;
+
         if (max > 1.0) {
             leftFrontPower  /= max;
             rightFrontPower /= max;
@@ -316,18 +426,19 @@ public class FullTest extends LinearOpMode
     void doActions(){
         // TODO: Variable extension amount
         if (Qol.checkButton(gamepad1.a, "a")){
-            telemetry.addData("QOL", "Was pressed");
-
-            Extend_Hori(!isTrue(action1.get("a")));
+            if (isToggled("a") || gamepad1.right_trigger < 0.5){
+                Extend_Hori(!isToggled("a"));
+            } else {
+                ManualExtend();
+            }
         }
-        if (Qol.checkButton(gamepad1.b, "b")){
+        if (Qol.checkButton(gamepad1.b, "b"))
             Clamp(!isTrue(action1.get("b")));
-        }
-        if (Qol.checkButton(gamepad1.x, "x")){
+
+        if (Qol.checkButton(gamepad1.x, "x"))
             Extend_Vert(!isTrue(action1.get("x")));
-        }
-        if (Qol.checkButton(gamepad1.y, "y")){
+
+        if (Qol.checkButton(gamepad1.y, "y"))
             Flip(!isTrue(action1.get("y")));
-        }
     }
 }
