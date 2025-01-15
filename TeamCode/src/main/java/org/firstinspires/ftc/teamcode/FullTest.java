@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-import static android.system.Os.kill;
-
 import androidx.annotation.NonNull;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -12,7 +10,6 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import java.util.HashMap;
-import java.util.Map;
 
 
 @TeleOp(name="Cross Your Fingers", group = "AAAAAA")
@@ -149,21 +146,7 @@ public class FullTest extends LinearOpMode
 
             drive(startPositions);
 
-            // TODO: Variable extension amount
-            if (Qol.checkButton(gamepad1.a, "a")){
-                telemetry.addData("QOL", "Was pressed");
-
-                Extend_Hori(!isTrue(action1.get("a")));
-            }
-            if (Qol.checkButton(gamepad1.b, "b")){
-                Clamp(!isTrue(action1.get("b")));
-            }
-            if (Qol.checkButton(gamepad1.x, "x")){
-                Extend_Vert(!isTrue(action1.get("x")));
-            }
-            if (Qol.checkButton(gamepad1.y, "y")){
-                Flip(!isTrue(action1.get("y")));
-            }
+            doActions();
 
 
             telemetry.update();
@@ -279,7 +262,7 @@ public class FullTest extends LinearOpMode
         pivot.setPosition(up ? 1 : 0);
     }
 
-    void drive(int[] startPositions){
+    void drive(@NonNull int[] startPositions){
         int[] positions = {
                 leftBackDrive.getCurrentPosition() - startPositions[0],
                 rightBackDrive.getCurrentPosition() - startPositions[1],
@@ -325,5 +308,23 @@ public class FullTest extends LinearOpMode
         telemetry.addData("Back  left/Right", "%4.2f, %4.4f", leftBackPower, rightBackPower);
         telemetry.addData("Back Encoder l/r", "%d, %d", positions[0], positions[1]);
         telemetry.addData("Front Encoder l/r", "%d, %d", positions[2], positions[3]);
+    }
+
+    void doActions(){
+        // TODO: Variable extension amount
+        if (Qol.checkButton(gamepad1.a, "a")){
+            telemetry.addData("QOL", "Was pressed");
+
+            Extend_Hori(!isTrue(action1.get("a")));
+        }
+        if (Qol.checkButton(gamepad1.b, "b")){
+            Clamp(!isTrue(action1.get("b")));
+        }
+        if (Qol.checkButton(gamepad1.x, "x")){
+            Extend_Vert(!isTrue(action1.get("x")));
+        }
+        if (Qol.checkButton(gamepad1.y, "y")){
+            Flip(!isTrue(action1.get("y")));
+        }
     }
 }
