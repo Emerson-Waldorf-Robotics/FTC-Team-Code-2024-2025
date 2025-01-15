@@ -276,9 +276,10 @@ public class FullTest extends LinearOpMode
 
         double max;
 
-        double axial   = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
-        double lateral =  gamepad1.left_stick_x;
-        double yaw     =  -gamepad1.right_stick_x;
+        // TODO: Use exponential
+        double axial   = -gamepad2.left_stick_y;  // Note: pushing stick forward gives negative value
+        double lateral =  gamepad2.left_stick_x;
+        double yaw     =  -gamepad2.right_stick_x; // This needs to be negative for some reason?
 
         double leftFrontPower  = axial + lateral + yaw;
         double rightFrontPower = axial - lateral - yaw;
