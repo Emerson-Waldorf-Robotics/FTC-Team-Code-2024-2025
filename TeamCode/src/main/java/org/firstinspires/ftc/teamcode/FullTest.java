@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import android.hardware.Camera;
+
 import androidx.annotation.NonNull;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -208,8 +210,10 @@ public class FullTest extends LinearOpMode
             action1.put("a", false);
 
             if (isTrue(action1.get("x"))){
-                // Bring bucket down
-                MoveMotor(0, extend_vert, true, 1000);
+                // Quickly Bring bucket down
+                Extend_Vert(false);
+                //MoveMotor(0, extend_vert, true, 2500);
+                //action1.put("x", Boolean.FALSE);
             }
 
             // Pivot up
@@ -274,12 +278,12 @@ public class FullTest extends LinearOpMode
 
         double axial   = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
         double lateral =  gamepad1.left_stick_x;
-        double yaw     =  gamepad1.right_stick_x;
+        double yaw     =  -gamepad1.right_stick_x;
 
         double leftFrontPower  = axial + lateral + yaw;
         double rightFrontPower = axial - lateral - yaw;
-        double leftBackPower   = axial + lateral + yaw;
-        double rightBackPower  = axial - lateral - yaw;
+        double leftBackPower   = axial - lateral + yaw;
+        double rightBackPower  = axial + lateral - yaw;
 
 
         // Normalize the values so no wheel power exceeds 100%
@@ -287,8 +291,6 @@ public class FullTest extends LinearOpMode
         max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
         max = Math.max(max, Math.abs(leftBackPower));
         max = Math.max(max, Math.abs(rightBackPower));
-        // max = Math.max(max, Math.abs(extendMotorPower));
-        max *= 1;
 
         if (max > 1.0) {
             leftFrontPower  /= max;
