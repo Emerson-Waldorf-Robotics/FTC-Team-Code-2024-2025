@@ -167,7 +167,7 @@ public class FullTest extends LinearOpMode
 
             // Safeties:
             // Are we currently horizontally retracted?
-            if (!isTrue(action1.get("a"))){
+            if (!isToggled("a")){
                 // Unclamp in case driver forgot to
                 Clamp(false);
 
@@ -194,7 +194,7 @@ public class FullTest extends LinearOpMode
             // Safety unflip during lower
             Flip(false);
 
-            if (!isTrue(action1.get("a"))){
+            if (!isToggled("a")){
                 // Move the Clamp out of the way
                 ResetPivot();
             }
@@ -218,7 +218,7 @@ public class FullTest extends LinearOpMode
         } else {
             action1.put("a", false);
 
-            if (isTrue(action1.get("x"))){
+            if (isToggled("x")){
                 // Quickly Bring bucket down
                 Extend_Vert(false);
                 //MoveMotor(0, extend_vert, true, 2500);
@@ -256,7 +256,7 @@ public class FullTest extends LinearOpMode
     void Flip(boolean up){
         if (up){
             // Don't flip while lowered
-            if (isTrue(action1.get("x"))){
+            if (isToggled("x")){
                 action1.put("y", true);
                 // Flip
                 flip.setPosition(1);
@@ -445,13 +445,13 @@ public class FullTest extends LinearOpMode
             }
         }
         if (Qol.checkButton(gamepad1.b, "b"))
-            Clamp(!isTrue(action1.get("b")));
+            Clamp(!isToggled("b"));
 
         if (Qol.checkButton(gamepad1.x, "x"))
-            Extend_Vert(!isTrue(action1.get("x")));
+            Extend_Vert(!isToggled("x"));
 
         if (Qol.checkButton(gamepad1.y, "y"))
-            Flip(!isTrue(action1.get("y")));
+            Flip(!isToggled("y"));
     }
 
     void initServos(){
