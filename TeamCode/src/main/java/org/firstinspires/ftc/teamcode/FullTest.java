@@ -8,9 +8,9 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.sun.tools.javac.code.Type;
 
 import java.util.HashMap;
+import java.util.Map;
 
 
 @TeleOp(name="Cross Your Fingers", group = "AAAAAA")
@@ -39,6 +39,8 @@ public class FullTest extends LinearOpMode
     }
 
     HashMap<String, Boolean> action1 = new HashMap<>(16);
+
+    HashMap<Long, Runnable> callbacks = new HashMap<>();
 
     boolean isTrue(Boolean totest){
         return Boolean.TRUE.equals(totest);
@@ -151,6 +153,7 @@ public class FullTest extends LinearOpMode
 
             doActions(startPositions);
 
+            runCallbacks();
 
             telemetry.update();
 
@@ -168,18 +171,23 @@ public class FullTest extends LinearOpMode
                 // Unclamp in case driver forgot to
                 Clamp(false);
 
-                sleep(10);
+                //sleep(10);
 
                 // Move the Clamp out of the way
-                ResetPivot();
+                //ResetPivot();
 
-                sleep(10);
+                // Move clamp away in 10 millis
+                registerCallback(this::ResetPivot, 10);
+
+                // Extend up in 20 Millis
+                registerCallback(() -> MoveMotor(VERTICAL_DIFFERENCE, extend_vert, true, 5000), 20);
+            } else {
+                // Extend up
+                MoveMotor(VERTICAL_DIFFERENCE, extend_vert, true, 5000);
+
+                // Uncomment to slow down the bot a bit but make it so that you can't flip while the arm is still rising
+                //sleep(200);
             }
-
-            // Extend up
-            MoveMotor(VERTICAL_DIFFERENCE, extend_vert, true, 5000);
-
-            sleep(200);
         } else {
             action1.put("x", false);
 
@@ -223,10 +231,13 @@ public class FullTest extends LinearOpMode
             MoveMotor(0, extend_horiz, true, 2000);
 
             // Delay
-            sleep(750);
+            //sleep(750);
 
             // Unclamp
-            Clamp(false);
+            //Clamp(false);
+
+            // Unclamp in 750 ms
+            registerCallback(() -> Clamp(false), 750);
         }
     }
 
@@ -449,5 +460,23 @@ public class FullTest extends LinearOpMode
 
         // Flip reset position
         Flip(false);
+    }
+
+
+    // Callbacks
+    void registerCallback(Runnable callback, int delayMillis){
+        long now = runtime.nanoseconds();
+        long runwhen = now + (delayMillis * 1000000L);
+        callbacks.put(runwhen, callback);
+    }
+
+    void runCallbacks(){
+        long now = runtime.nanoseconds();
+        // Loop through callbacks
+        for (Map.Entry<Long, Runnable> entry : callbacks.entrySet()) {
+            if (entry.getKey() <= now) {
+                entry.getValue().run();
+            }
+        }
     }
 }
