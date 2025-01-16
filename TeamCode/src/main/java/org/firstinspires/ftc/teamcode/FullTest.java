@@ -123,16 +123,15 @@ public class FullTest extends LinearOpMode
         pivot.scaleRange(0.015, 0.87);
         //pivot.setDirection(Servo.Direction.REVERSE);
         clamp = hardwareMap.get(Servo.class, "clamp_servo");
-        clamp.scaleRange(0.7, 0.85);
+        clamp.scaleRange(0.6, 0.85);
         flip  = hardwareMap.get(Servo.class, "flipper_servo");
-        flip.scaleRange(0.1, 1);
+        flip.scaleRange(0.16, 1);
 
         //telemetry.addData(">", "Touch START to Initialize.");
         //telemetry.update();
         //waitForStart();
 
-        // Pivot reset position
-        ResetPivot();
+        initServos();
 
         telemetry.addLine("Controller 1: Manipulator");
         telemetry.addLine("Controller 2: Driver");
@@ -150,7 +149,7 @@ public class FullTest extends LinearOpMode
 
             drive(startPositions);
 
-            doActions();
+            doActions(startPositions);
 
 
             telemetry.update();
@@ -265,7 +264,7 @@ public class FullTest extends LinearOpMode
     }
 
     void ResetPivot(){
-        pivot.setPosition(0.82);
+        pivot.setPosition(0.65);
     }
 
     void Pivot(boolean up){
@@ -279,7 +278,7 @@ public class FullTest extends LinearOpMode
         return Math.min(high, Math.max(low, value));
     }
 
-    void ManualExtend(){
+    void ManualExtend(int[] stp){
         boolean buttonState1  = false, buttonState2  = false;
         boolean buttonToggle1 = false, buttonToggle2 = false;
         action1.put("a", true);
@@ -294,6 +293,8 @@ public class FullTest extends LinearOpMode
 
         extend_horiz.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         while (opModeIsActive()){
+            drive(stp);
+
             float val = gamepad1.left_stick_y;
             int pos = extend_horiz.getCurrentPosition();
             if (val == 0){
@@ -423,13 +424,13 @@ public class FullTest extends LinearOpMode
         telemetry.addData("Front Encoder l/r", "%d, %d", positions[2], positions[3]);
     }
 
-    void doActions(){
+    void doActions(int[] stp){
         // TODO: Variable extension amount
         if (Qol.checkButton(gamepad1.a, "a")){
             if (isToggled("a") || gamepad1.right_trigger < 0.5){
                 Extend_Hori(!isToggled("a"));
             } else {
-                ManualExtend();
+                ManualExtend(stp);
             }
         }
         if (Qol.checkButton(gamepad1.b, "b"))
@@ -440,5 +441,13 @@ public class FullTest extends LinearOpMode
 
         if (Qol.checkButton(gamepad1.y, "y"))
             Flip(!isTrue(action1.get("y")));
+    }
+
+    void initServos(){
+        // Pivot reset position
+        ResetPivot();
+
+        // Flip reset position
+        Flip(false);
     }
 }
