@@ -13,8 +13,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-@TeleOp(name="Cross Your Fingers", group = "AAAAAA")
-public class FullTest extends LinearOpMode
+// AMain for appearing on top if alphabetical
+@TeleOp(name="Run TeleOp", group = "AMain")
+public class RunFullTeleOp extends LinearOpMode
 {
     static class Qol {
         // Last button position
