@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.firstinspires.ftc.teamcode.shared.Shared.MoveMotor;
 
@@ -51,7 +52,7 @@ public class RunFullTeleOp extends LinearOpMode
 
     HashMap<String, Boolean> action1 = new HashMap<>(16);
 
-    HashMap<Long, Runnable> callbacks = new HashMap<>();
+    ConcurrentHashMap<Long, Runnable> callbacks = new ConcurrentHashMap<>();
 
     boolean isTrue(Boolean totest){
         return Boolean.TRUE.equals(totest);
