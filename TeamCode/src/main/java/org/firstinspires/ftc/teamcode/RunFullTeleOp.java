@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 
@@ -149,6 +150,7 @@ public class RunFullTeleOp extends LinearOpMode
 
         while (opModeIsActive())
         {
+            addNeededTelemetry();
 
             drive(startPositions);
 
@@ -162,6 +164,8 @@ public class RunFullTeleOp extends LinearOpMode
         }
     }
 
+
+    /// Vertical extension
     void Extend_Vert(boolean up){
         if (up){
             action1.put("x", true);
@@ -205,6 +209,8 @@ public class RunFullTeleOp extends LinearOpMode
         }
     }
 
+
+    /// Horizontal extension
     void Extend_Hori(boolean goout){
         if (goout){
             action1.put("a", true);
@@ -242,6 +248,7 @@ public class RunFullTeleOp extends LinearOpMode
         }
     }
 
+    /// Clamp the clamp
     void Clamp(boolean on){
         if (on){
             action1.put("b", true);
@@ -254,6 +261,8 @@ public class RunFullTeleOp extends LinearOpMode
         }
     }
 
+
+    /// Flip the flipper
     void Flip(boolean up){
         if (up){
             // Don't flip while lowered
@@ -262,7 +271,7 @@ public class RunFullTeleOp extends LinearOpMode
                 // Flip
                 flip.setPosition(1);
             } else {
-                telemetry.addLine("Wont flip while lowered.");
+                telemetry.addLine("Won't flip while lowered.");
             }
         } else {
             action1.put("y", false);
@@ -271,28 +280,36 @@ public class RunFullTeleOp extends LinearOpMode
         }
     }
 
+    /// Easier to read way of checking if a button is toggled
     boolean isToggled(String value){
         return isTrue(action1.get(value));
     }
 
+    /// Reset the pivot to a "good" position
     void ResetPivot(){
         pivot.setPosition(0.65);
     }
 
+    /*
+     * TODO: Use int instead of bool to convey position:
+     *  We would need the positions:
+     *  Depositing
+     *  Down
+     *  Close to down (for manual extensions)
+     *  Away from lift (for lifting)
+     */
     void Pivot(boolean up){
         pivot.setPosition(up ? 1 : 0);
     }
 
-    int clampBetween(int low, int high, int value){
-        return Math.min(high, Math.max(low, value));
-    }
-    float clampBetween(float low, float high, float value){
-        return Math.min(high, Math.max(low, value));
-    }
-
+    /// Manual Linear Extension. Kind of like it's own mini OpMode
+    // TODO: Consider using stick pos as extension progress
     void ManualExtend(int[] stp){
+        // Initialize button states and toggles.
+        // It would be overkill to use another HashMap here
         boolean buttonState1  = false, buttonState2  = false;
         boolean buttonToggle1 = false, buttonToggle2 = false;
+
         action1.put("a", true);
 
         // Open clamp
@@ -301,35 +318,54 @@ public class RunFullTeleOp extends LinearOpMode
         // Pivot down
         //Pivot(false);
 
+        // Get the current motor run mode (Probably RUN_TO_POSITION but you can't be sure)
         DcMotor.RunMode lastmode = extend_horiz.getMode();
 
+        // Set to RUN_USING ENCODER
         extend_horiz.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         while (opModeIsActive()){
+            // Allow the driver to interact while picking up
             drive(stp);
 
+            // Fun math to figure out whether we will overstep bounds and possibly break the bot by continuing
             float val = gamepad1.left_stick_y;
             int pos = extend_horiz.getCurrentPosition();
+
+            // If manipulator requests to stop moving the arm
             if (val == 0){
+                // Stop. It doesn't matter how far out or in it is.
                 extend_horiz.setPower(0);
+
+            // If the manipulator requests to move the arm in
             } else if (val < 0){
+                // Make sure that we are not already fully in
                 if (!(pos < 10)){
+                    // Accept the request
                     extend_horiz.setPower(val);
                 }
+
+            // If the manipulator requests to move the arm out
             } else {
+                // Make sure that we are not already fully out
                 if (!(pos > EXTEND_DIFFERENCE - 10)){
+                    // Accept the request
                     extend_horiz.setPower(val);
                 }
             }
 
-            // Stop if too far
+            // If we are about to go too far out
             if (pos > EXTEND_DIFFERENCE - 10){
+                // Make sure that we are actually moving
                 if (extend_horiz.getPower() > 0) {
+                    // Stop the motor
                     extend_horiz.setPower(0);
                 }
             }
-            // Stop if too close
+            // If we are about to go too far in
             if (pos < 10){
+                // Make sure that we are actually moving
                 if (extend_horiz.getPower() < 0) {
+                    // Stop the motor
                     extend_horiz.setPower(0);
                 }
             }
@@ -340,18 +376,21 @@ public class RunFullTeleOp extends LinearOpMode
                 break;
             }
 
-            // B button now for lowering the pivot
+            // B button is now for lowering the pivot
             if (gamepad1.b){
+                // Fun stuff to have the button toggle what it does every press
                 if (!buttonToggle1){
                     buttonToggle1 = true;
 
                     if (!buttonState1){
                         buttonState1 = true;
 
+                        // On first press:
                         Pivot(false);
                     } else {
                         buttonState1 = false;
 
+                        // On second press:
                         Pivot(true);
                     }
                 }
@@ -361,16 +400,19 @@ public class RunFullTeleOp extends LinearOpMode
 
             // X button now for clamping
             if (gamepad1.x){
+                // More fun stuff to have the button toggle what it does every press
                 if (!buttonToggle2){
                     buttonToggle2 = true;
 
                     if (!buttonState2){
                         buttonState2 = true;
 
+                        // First press:
                         Clamp(true);
                     } else {
                         buttonState2 = false;
 
+                        // Second press:
                         Clamp(false);
                     }
                 }
@@ -378,15 +420,33 @@ public class RunFullTeleOp extends LinearOpMode
                 buttonToggle2 = false;
             }
         }
-        Clamp(true);
+        // End while loop (A was released or OpMode stopped
 
+        // Just in case. We don't want to move any motors after the OpMode is requested to be stopped
+        if (!opModeIsActive()){
+            return;
+        }
+
+        // Reset the motor mode
         extend_horiz.setMode(lastmode);
 
-        Extend_Hori(false);
+        // Check if we are already clamped on
+        if (isToggled("b")){
+            // Bring the Linear Extension Back in
+            // TODO: Consider toggling with A instead of having to hold A
+            Extend_Hori(false);
+        } else {
+            // No good reason to bring back in without clamping on. Clamp on now just in case
+            Clamp(true);
+
+            // Retract linear in 300 millis (after clamping)
+            registerCallback(() -> Extend_Hori(false), 300);
+        }
 
         action1.put("a", false);
     }
 
+    /// Shortened and slightly modified drive from OmniLinearOpMode
     void drive(@NonNull int[] startPositions){
         int[] positions = {
                 leftBackDrive.getCurrentPosition() - startPositions[0],
@@ -414,6 +474,7 @@ public class RunFullTeleOp extends LinearOpMode
         max = Math.max(max, Math.abs(leftBackPower));
         max = Math.max(max, Math.abs(rightBackPower));
 
+        // Allow speed to be slowed based on pressure put on the left trigger
         max *= gamepad2.left_trigger*2+1;
 
         if (max > 1.0) {
@@ -436,8 +497,9 @@ public class RunFullTeleOp extends LinearOpMode
         telemetry.addData("Front Encoder l/r", "%d, %d", positions[2], positions[3]);
     }
 
+
+    /// Run actions based on buttons pressed on Manipulator's controller
     void doActions(int[] stp){
-        // TODO: Variable extension amount
         if (Qol.checkButton(gamepad1.a, "a")){
             if (isToggled("a") || gamepad1.right_trigger < 0.5){
                 Extend_Hori(!isToggled("a"));
@@ -455,6 +517,8 @@ public class RunFullTeleOp extends LinearOpMode
             Flip(!isToggled("y"));
     }
 
+
+    /// Initialize servos to start position to hold them there
     void initServos(){
         // Pivot reset position
         ResetPivot();
@@ -465,19 +529,50 @@ public class RunFullTeleOp extends LinearOpMode
 
 
     // Callbacks
+    // TODO: Test these
+
+    /// Register a callback to be ran later
     void registerCallback(Runnable callback, int delayMillis){
+        // Get current time in nanoseconds
         long now = runtime.nanoseconds();
+
+        // Calculate when the callback should be run
         long runwhen = now + (delayMillis * 1000000L);
+
+        // Add it to the callbacks HashMap
         callbacks.put(runwhen, callback);
     }
 
+
+    /// Run and delete all callbacks that have expired
     void runCallbacks(){
+        // Get current (run)time in nanoseconds
         long now = runtime.nanoseconds();
+
+        // We do it this way instead of enhanced for as we need to remove items while iterating.
+        // TODO: Consider, would an enhanced for that adds to a list and then iterating through that list be better?
+
+        // Create an Iterator over the entryset
+        Iterator<Map.Entry<Long, Runnable>> it = callbacks.entrySet().iterator();
+
         // Loop through callbacks
-        for (Map.Entry<Long, Runnable> entry : callbacks.entrySet()) {
+        while (it.hasNext()){
+            // Get the current entry
+            Map.Entry<Long, Runnable> entry = it.next();
+
+            // Check if time has expired
             if (entry.getKey() <= now) {
+                // Run the callback
                 entry.getValue().run();
+                // Remove the callback
+                it.remove();
             }
         }
+    }
+
+    void addNeededTelemetry(){
+        // Might be needed?
+        telemetry.addLine("Controller 1: Manipulator");
+        telemetry.addLine("Controller 2: Driver");
     }
 }
