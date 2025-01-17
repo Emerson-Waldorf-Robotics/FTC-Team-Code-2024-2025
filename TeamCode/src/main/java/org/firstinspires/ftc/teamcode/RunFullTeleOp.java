@@ -7,8 +7,10 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -73,6 +75,8 @@ public class RunFullTeleOp extends LinearOpMode
     private DcMotor rightFrontDrive = null;
     private DcMotor rightBackDrive = null;
 
+    private TouchSensor touch = null;
+
 
     private final int EXTEND_DIFFERENCE = 500;
     private final int VERTICAL_DIFFERENCE = 1720;
@@ -84,6 +88,8 @@ public class RunFullTeleOp extends LinearOpMode
         leftBackDrive  = hardwareMap.get(DcMotor.class, "left_back");
         rightFrontDrive = hardwareMap.get(DcMotor.class, "right_front");
         rightBackDrive = hardwareMap.get(DcMotor.class, "right_back");
+
+        touch = hardwareMap.get(TouchSensor.class, "touch_button");
 
         int[] startPositions = {
                 leftBackDrive.getCurrentPosition(),
@@ -101,10 +107,6 @@ public class RunFullTeleOp extends LinearOpMode
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must match the names assigned during the robot configuration.
         // step (using the FTC Robot Controller app on the phone).
-        extend_horiz  =  hardwareMap.get(DcMotorEx.class, "extend_horizontal");
-        extend_horiz.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-        extend_vert   =  hardwareMap.get(DcMotorEx.class, "extend_vertical");
-        extend_vert.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
         pivot = hardwareMap.get(Servo.class, "pivot_servo");
         // Vertical: 0.82
         // TODO: Change upper range to avoid hitting flipper
@@ -115,11 +117,17 @@ public class RunFullTeleOp extends LinearOpMode
         flip  = hardwareMap.get(Servo.class, "flipper_servo");
         flip.scaleRange(0.16, 1);
 
+        extend_horiz  =  hardwareMap.get(DcMotorEx.class, "extend_horizontal");
+        extend_vert   =  hardwareMap.get(DcMotorEx.class, "extend_vertical");
+
         //telemetry.addData(">", "Touch START to Initialize.");
         //telemetry.update();
         //waitForStart();
 
-        initServos();
+        initMotors();
+
+        extend_horiz.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+        extend_vert.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
 
         telemetry.addLine("Controller 1: Manipulator");
         telemetry.addLine("Controller 2: Driver");
@@ -302,9 +310,6 @@ public class RunFullTeleOp extends LinearOpMode
         // Pivot down
         //Pivot(false);
 
-        // Get the current motor run mode (Probably RUN_TO_POSITION but you can't be sure)
-        DcMotor.RunMode lastmode = extend_horiz.getMode();
-
         // Set to RUN_USING ENCODER
         extend_horiz.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         while (opModeIsActive()){
@@ -355,6 +360,7 @@ public class RunFullTeleOp extends LinearOpMode
             }
 
             // Stop if A released
+            // TODO: Consider toggling with A instead of having to hold A
             if (!gamepad1.a){
                 extend_horiz.setPower(0);
                 break;
@@ -410,9 +416,6 @@ public class RunFullTeleOp extends LinearOpMode
         if (!opModeIsActive()){
             return;
         }
-
-        // Reset the motor mode
-        extend_horiz.setMode(lastmode);
 
         // Check if we are already clamped on
         if (isToggled("b")){
@@ -534,12 +537,19 @@ public class RunFullTeleOp extends LinearOpMode
 
 
     /// Initialize servos to start position to hold them there
-    void initServos(){
+    void initMotors(){
         // Pivot reset position
         ResetPivot();
 
         // Flip reset position
         Flip(false);
+
+        extend_horiz.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        extend_horiz.setPower(-0.3);
+        while (!touch.isPressed()){
+            ;
+        }
+        extend_horiz.setPower(0);
     }
 
 
@@ -567,21 +577,25 @@ public class RunFullTeleOp extends LinearOpMode
         // We do it this way instead of enhanced for as we need to remove items while iterating.
         // TODO: Consider, would an enhanced for that adds to a list and then iterating through that list be better?
 
-        // Create an Iterator over the entryset
-        Iterator<Map.Entry<Long, Runnable>> it = callbacks.entrySet().iterator();
+        // List of id's to remove
+        ArrayList<Long> toRemove = new ArrayList<>();
 
-        // Loop through callbacks
-        while (it.hasNext()){
-            // Get the current entry
-            Map.Entry<Long, Runnable> entry = it.next();
+
+        telemetry.addLine("Callbacks:");
+        for (Map.Entry<Long, Runnable> entry : callbacks.entrySet()){
+            telemetry.addData("\t", "%d: %s", (entry.getKey() - now) / 1000000L, entry.getValue().toString());
 
             // Check if time has expired
-            if (entry.getKey() <= now) {
+            if (entry.getKey() - now <= 0) {
                 // Run the callback
                 entry.getValue().run();
-                // Remove the callback
-                it.remove();
+
+                toRemove.add(entry.getKey());
             }
+        }
+
+        for (long id : toRemove){
+            callbacks.remove(id);
         }
     }
 
@@ -589,5 +603,7 @@ public class RunFullTeleOp extends LinearOpMode
         // Might be needed?
         telemetry.addLine("Controller 1: Manipulator");
         telemetry.addLine("Controller 2: Driver");
+
+        telemetry.addData("Linear extension:", touch.isPressed() ? "In" : "Out");
     }
 }
