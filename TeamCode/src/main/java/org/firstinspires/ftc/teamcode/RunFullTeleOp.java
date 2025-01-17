@@ -110,7 +110,6 @@ public class RunFullTeleOp extends LinearOpMode
         // step (using the FTC Robot Controller app on the phone).
         pivot = hardwareMap.get(Servo.class, "pivot_servo");
         // Vertical: 0.82
-        // TODO: Change upper range to avoid hitting flipper
         pivot.scaleRange(0.015, 0.87);
         //pivot.setDirection(Servo.Direction.REVERSE);
         clamp = hardwareMap.get(Servo.class, "clamp_servo");
@@ -212,7 +211,7 @@ public class RunFullTeleOp extends LinearOpMode
             Clamp(false);
 
             // Pivot down
-            Pivot(false);
+            PivotPos(2);
             // Extend
             MoveMotorTel(EXTEND_DIFFERENCE, extend_horiz, true, 2000);
         } else {
@@ -226,7 +225,7 @@ public class RunFullTeleOp extends LinearOpMode
             }
 
             // Pivot up
-            Pivot(true);
+            PivotPos(1);
             // Retract
             MoveMotorTel(0, extend_horiz, true, 2000);
 
@@ -280,19 +279,29 @@ public class RunFullTeleOp extends LinearOpMode
 
     /// Reset the pivot to a "good" position
     void ResetPivot(){
-        pivot.setPosition(0.65);
+        PivotPos(0);
     }
 
-    /*
-     * TODO: Use int instead of bool to convey position:
-     *  We would need the positions:
-     *  Depositing
-     *  Down
-     *  Close to down (for manual extensions)
-     *  Away from lift (for lifting)
-     */
-    void Pivot(boolean up){
-        pivot.setPosition(up ? 1 : 0);
+    /// Set the pivot to a position
+    void PivotPos(int position){
+        switch (position) {
+            case 0:
+                pivot.setPosition(0.65);
+                break;
+            case 1:
+                pivot.setPosition(1);
+                break;
+            case 2:
+                pivot.setPosition(0);
+                break;
+            case 3:
+                pivot.setPosition(0.2);
+                break;
+            default:
+                // Crash program so we can see where this was called from
+                //noinspection divzero,NumericOverflow
+                telemetry.addData("Error: Invalid Pivot position", "%d", 1/0);
+        }
     }
 
     /// Manual Linear Extension. Kind of like it's own mini OpMode
@@ -377,12 +386,12 @@ public class RunFullTeleOp extends LinearOpMode
                         buttonState1 = true;
 
                         // On first press:
-                        Pivot(false);
+                        PivotPos(2);
                     } else {
                         buttonState1 = false;
 
                         // On second press:
-                        Pivot(true);
+                        PivotPos(3);
                     }
                 }
             } else {
@@ -421,7 +430,6 @@ public class RunFullTeleOp extends LinearOpMode
         // Check if we are already clamped on
         if (isToggled("b")){
             // Bring the Linear Extension Back in
-            // TODO: Consider toggling with A instead of having to hold A
             Extend_Hori(false);
         } else {
             // No good reason to bring back in without clamping on. Clamp on now just in case
@@ -555,7 +563,6 @@ public class RunFullTeleOp extends LinearOpMode
 
 
     // Callbacks
-    // TODO: Test these
 
     /// Register a callback to be ran later
     void registerCallback(Runnable callback, int delayMillis){
@@ -574,9 +581,6 @@ public class RunFullTeleOp extends LinearOpMode
     void runCallbacks(){
         // Get current (run)time in nanoseconds
         long now = runtime.nanoseconds();
-
-        // We do it this way instead of enhanced for as we need to remove items while iterating.
-        // TODO: Consider, would an enhanced for that adds to a list and then iterating through that list be better?
 
         // List of id's to remove
         ArrayList<Long> toRemove = new ArrayList<>();

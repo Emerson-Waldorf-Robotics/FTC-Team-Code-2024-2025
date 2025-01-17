@@ -25,8 +25,8 @@ public class ServoTest extends LinearOpMode
         int PIVOT_DISTANCE = 0;
 
 
-        pivot = hardwareMap.get(Servo.class, "flipper_servo");
-        pivot.scaleRange(0.16, 1);
+        pivot = hardwareMap.get(Servo.class, "pivot_servo");
+        pivot.scaleRange(0.015, 0.87);
         //pivot.setDirection(Servo.Direction.REVERSE);
         //pivot.setDirection(Servo.Direction.REVERSE);
 
