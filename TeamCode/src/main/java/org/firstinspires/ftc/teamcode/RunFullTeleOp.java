@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import static org.firstinspires.ftc.teamcode.shared.Shared.MoveMotor;
+
 
 // AMain for appearing on top if alphabetical
 @TeleOp(name="Run TeleOp", group = "AMain")
@@ -38,6 +40,11 @@ public class RunFullTeleOp extends LinearOpMode
             }
             return false;
         }
+    }
+
+    // Move motor proxy to shared code
+    void MoveMotorTel(int where, @NonNull DcMotorEx motor, boolean exact, int vel){
+        MoveMotor(where, motor, exact, vel, telemetry);
     }
 
     HashMap<String, Boolean> action1 = new HashMap<>(16);
@@ -70,30 +77,6 @@ public class RunFullTeleOp extends LinearOpMode
     private final int EXTEND_DIFFERENCE = 500;
     private final int VERTICAL_DIFFERENCE = 1720;
 
-
-    void MoveMotor(int where, @NonNull DcMotorEx motor, boolean exact, int vel){
-        telemetry.addLine("Running motor...");
-        telemetry.addLine("--------------------------------------------------");
-        telemetry.addData("Moving by", "%d", where);
-
-        if (exact){
-            telemetry.update();
-
-            motor.setTargetPosition(where);
-        } else {
-            int spos = motor.getCurrentPosition();
-            int epos = spos + where;
-            telemetry.addData("Start position", "%d", spos);
-            telemetry.addData("End Position", "%d", epos);
-            telemetry.update();
-
-            motor.setTargetPosition(epos);
-        }
-
-        motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        motor.setVelocity(vel);
-    }
-
     @Override public void runOpMode()
     {
         // Driving stuff
@@ -124,6 +107,7 @@ public class RunFullTeleOp extends LinearOpMode
         extend_vert.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
         pivot = hardwareMap.get(Servo.class, "pivot_servo");
         // Vertical: 0.82
+        // TODO: Change upper range to avoid hitting flipper
         pivot.scaleRange(0.015, 0.87);
         //pivot.setDirection(Servo.Direction.REVERSE);
         clamp = hardwareMap.get(Servo.class, "clamp_servo");
@@ -185,10 +169,10 @@ public class RunFullTeleOp extends LinearOpMode
                 registerCallback(this::ResetPivot, 10);
 
                 // Extend up in 20 Millis
-                registerCallback(() -> MoveMotor(VERTICAL_DIFFERENCE, extend_vert, true, 5000), 20);
+                registerCallback(() -> MoveMotorTel(VERTICAL_DIFFERENCE, extend_vert, true, 5000), 20);
             } else {
                 // Extend up
-                MoveMotor(VERTICAL_DIFFERENCE, extend_vert, true, 5000);
+                MoveMotorTel(VERTICAL_DIFFERENCE, extend_vert, true, 5000);
 
                 // Uncomment to slow down the bot a bit but make it so that you can't flip while the arm is still rising
                 //sleep(200);
@@ -205,7 +189,7 @@ public class RunFullTeleOp extends LinearOpMode
             }
 
             // Down again
-            MoveMotor(0, extend_vert, true, 1000);
+            MoveMotorTel(0, extend_vert, true, 1000);
         }
     }
 
@@ -221,21 +205,21 @@ public class RunFullTeleOp extends LinearOpMode
             // Pivot down
             Pivot(false);
             // Extend
-            MoveMotor(EXTEND_DIFFERENCE, extend_horiz, true, 2000);
+            MoveMotorTel(EXTEND_DIFFERENCE, extend_horiz, true, 2000);
         } else {
             action1.put("a", false);
 
             if (isToggled("x")){
                 // Quickly Bring bucket down
                 Extend_Vert(false);
-                //MoveMotor(0, extend_vert, true, 2500);
+                //MoveMotorTel(0, extend_vert, true, 2500);
                 //action1.put("x", Boolean.FALSE);
             }
 
             // Pivot up
             Pivot(true);
             // Retract
-            MoveMotor(0, extend_horiz, true, 2000);
+            MoveMotorTel(0, extend_horiz, true, 2000);
 
             // Delay
             //sleep(750);
