@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 import static org.firstinspires.ftc.teamcode.shared.Shared.MoveMotor;
 
@@ -61,6 +62,7 @@ public class RunFullTeleOp extends LinearOpMode
     HashMap<String, Boolean> action1 = new HashMap<>(16);
 
     ConcurrentHashMap<Long, Runnable> callbacks = new ConcurrentHashMap<>();
+    ConcurrentHashMap<Supplier<Boolean>, Runnable> checking_callbacks = new ConcurrentHashMap<>();
 
     boolean isTrue(Boolean totest){
         return Boolean.TRUE.equals(totest);
@@ -88,7 +90,7 @@ public class RunFullTeleOp extends LinearOpMode
 
 
     private final int EXTEND_DIFFERENCE = 500;
-    private final int VERTICAL_DIFFERENCE = 1720;
+    private final int VERTICAL_DIFFERENCE = 1830;
 
     @Override public void runOpMode()
     {
@@ -213,10 +215,10 @@ public class RunFullTeleOp extends LinearOpMode
                 registerCallback(this::ResetPivot, 10);
 
                 // Extend up in 100 Millis
-                registerCallback(() -> MoveMotorTel(VERTICAL_DIFFERENCE, extend_vert, true, 5000), 100);
+                registerCallback(() -> MoveMotorTel(VERTICAL_DIFFERENCE, extend_vert, true, 7000), 100);
             } else {
                 // Extend up
-                MoveMotorTel(VERTICAL_DIFFERENCE, extend_vert, true, 5000);
+                MoveMotorTel(VERTICAL_DIFFERENCE, extend_vert, true, 7000);
 
                 // Uncomment to slow down the bot a bit but make it so that you can't flip while the arm is still rising
                 //sleep(200);
@@ -225,7 +227,7 @@ public class RunFullTeleOp extends LinearOpMode
             action1.put("x", false);
 
             // Down again
-            MoveMotorTel(0, extend_vert, true, 1000);
+            MoveMotorTel(0, extend_vert, true, 1500);
 
             // Safety unflip during lower
             Flip(false);
@@ -270,7 +272,8 @@ public class RunFullTeleOp extends LinearOpMode
             //Clamp(false);
 
             // Unclamp in 750 ms
-            registerCallback(() -> Clamp(false), 750);
+            //registerCallback(() -> Clamp(false), 750);
+            registerCheckingCallback(() -> Clamp(false), () -> touch.isPressed());
         }
     }
 
@@ -364,16 +367,13 @@ public class RunFullTeleOp extends LinearOpMode
         // Set to RUN_USING ENCODER
         extend_horiz.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         while (opModeIsActive()){
-            // Dario or Camilo
-            if ((MANIPULATOR & 0b110) > 0) {
-                if (APress && !gamepad1.a) {
-                    APress = false;
-                }
+            if (APress && !gamepad1.a) {
+                APress = false;
+            }
 
-                if (!APress && gamepad1.a) {
-                    extend_horiz.setPower(0);
-                    break;
-                }
+            if (!APress && gamepad1.a) {
+                extend_horiz.setPower(0);
+                break;
             }
 
 
@@ -420,14 +420,6 @@ public class RunFullTeleOp extends LinearOpMode
                 if (extend_horiz.getPower() < 0) {
                     // Stop the motor
                     extend_horiz.setPower(0);
-                }
-            }
-
-            if (MANIPULATOR == 1) {
-                // Stop if A released
-                if (!gamepad1.a) {
-                    extend_horiz.setPower(0);
-                    break;
                 }
             }
 
@@ -636,6 +628,18 @@ public class RunFullTeleOp extends LinearOpMode
         callbacks.put(runwhen, callback);
     }
 
+    /// Register a callback to be ran later
+    void registerCheckingCallback(Runnable callback, Supplier<Boolean> check){
+        // If check passes, run right now
+        if (check.get()) {
+            callback.run();
+            return;
+        }
+
+        // Add it to the callbacks HashMap
+        checking_callbacks.put(check, callback);
+    }
+
 
     /// Run and delete all callbacks that have expired
     void runCallbacks(){
@@ -644,6 +648,7 @@ public class RunFullTeleOp extends LinearOpMode
 
         // List of id's to remove
         ArrayList<Long> toRemove = new ArrayList<>();
+        ArrayList<Supplier<Boolean>> toRemoveCheck = new ArrayList<>();
 
         if (!callbacks.isEmpty()) {
             telemetry.addLine("Callbacks:");
@@ -662,6 +667,21 @@ public class RunFullTeleOp extends LinearOpMode
 
         for (long id : toRemove){
             callbacks.remove(id);
+        }
+
+        for (Map.Entry<Supplier<Boolean>, Runnable> entry : checking_callbacks.entrySet()){
+            telemetry.addData("\t", "%s: %s", entry.getKey().toString(), entry.getValue().toString());
+
+            if (entry.getKey().get()) {
+                // Run the callback
+                entry.getValue().run();
+
+                toRemoveCheck.add(entry.getKey());
+            }
+        }
+
+        for (Supplier<Boolean> id : toRemoveCheck){
+            checking_callbacks.remove(id);
         }
     }
 
