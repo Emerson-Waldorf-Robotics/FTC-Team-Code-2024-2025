@@ -23,6 +23,14 @@ import static org.firstinspires.ftc.teamcode.shared.Shared.MoveMotor;
 @TeleOp(name="Run TeleOp", group = "AMain")
 public class RunFullTeleOp extends LinearOpMode
 {
+    /** Manipulator:
+     * 0: Invalid
+     * 1: Jacob
+     * 2: Dario
+     * 4: Camilo
+     */
+    private char MANIPULATOR = 0;
+
     static class Qol {
         // Last button position
         static HashMap<String, Boolean> buttonStates = new HashMap<>(4);
@@ -84,6 +92,30 @@ public class RunFullTeleOp extends LinearOpMode
 
     @Override public void runOpMode()
     {
+        telemetry.addLine("Please select manipulator for control selection:");
+        telemetry.addLine("On Gamepad 1 Press:");
+        telemetry.addLine("Botton button: Jacob");
+        telemetry.addLine("Top button:    Dario");
+        telemetry.addLine("Left Button:   Camilo");
+        telemetry.update();
+        while (opModeInInit()){
+            if (gamepad1.a){
+                MANIPULATOR = 2;
+                break;
+            }
+            if (gamepad1.y){
+                MANIPULATOR = 2;
+                break;
+            }
+            if (gamepad1.x){
+                MANIPULATOR = 4;
+                break;
+            }
+        }
+        if (!opModeInInit()){
+            return;
+        }
+
         // Driving stuff
         leftFrontDrive  = hardwareMap.get(DcMotor.class, "left_front");
         leftBackDrive  = hardwareMap.get(DcMotor.class, "left_back");
@@ -124,7 +156,6 @@ public class RunFullTeleOp extends LinearOpMode
         //telemetry.update();
         //waitForStart();
 
-        initMotors();
 
         extend_horiz.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
         extend_vert.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
@@ -137,6 +168,11 @@ public class RunFullTeleOp extends LinearOpMode
 
         waitForStart();
         runtime.reset();
+
+        initMotors();
+
+        extend_horiz.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+        extend_vert.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
 
         ResetPivot();
 
@@ -176,8 +212,8 @@ public class RunFullTeleOp extends LinearOpMode
                 // Move clamp away in 10 millis
                 registerCallback(this::ResetPivot, 10);
 
-                // Extend up in 20 Millis
-                registerCallback(() -> MoveMotorTel(VERTICAL_DIFFERENCE, extend_vert, true, 5000), 20);
+                // Extend up in 100 Millis
+                registerCallback(() -> MoveMotorTel(VERTICAL_DIFFERENCE, extend_vert, true, 5000), 100);
             } else {
                 // Extend up
                 MoveMotorTel(VERTICAL_DIFFERENCE, extend_vert, true, 5000);
@@ -188,16 +224,14 @@ public class RunFullTeleOp extends LinearOpMode
         } else {
             action1.put("x", false);
 
+            // Down again
+            MoveMotorTel(0, extend_vert, true, 1000);
+
             // Safety unflip during lower
             Flip(false);
 
-            if (!isToggled("a")){
-                // Move the Clamp out of the way
-                ResetPivot();
-            }
-
-            // Down again
-            MoveMotorTel(0, extend_vert, true, 1000);
+            // Move the Clamp out of the way
+            ResetPivot();
         }
     }
 
@@ -217,12 +251,12 @@ public class RunFullTeleOp extends LinearOpMode
         } else {
             action1.put("a", false);
 
-            if (isToggled("x")){
-                // Quickly Bring bucket down
-                Extend_Vert(false);
-                //MoveMotorTel(0, extend_vert, true, 2500);
-                //action1.put("x", Boolean.FALSE);
-            }
+//            if (isToggled("x")){
+//                // Quickly Bring bucket down
+//                Extend_Vert(false);
+//                //MoveMotorTel(0, extend_vert, true, 2500);
+//                //action1.put("x", Boolean.FALSE);
+//            }
 
             // Pivot up
             PivotPos(1);
@@ -262,6 +296,9 @@ public class RunFullTeleOp extends LinearOpMode
                 action1.put("y", true);
                 // Flip
                 flip.setPosition(1);
+
+                //Extend_Hori(false);
+                //ResetPivot();
             } else {
                 telemetry.addLine("Won't flip while lowered.");
             }
@@ -312,22 +349,39 @@ public class RunFullTeleOp extends LinearOpMode
         boolean buttonState1  = false, buttonState2  = false;
         boolean buttonToggle1 = false, buttonToggle2 = false;
 
+        boolean APress = true;
+
         action1.put("a", true);
+
+        Extend_Vert(false);
 
         // Open clamp
         Clamp(false);
 
         // Pivot down
-        //Pivot(false);
+        PivotPos(3);
 
         // Set to RUN_USING ENCODER
         extend_horiz.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         while (opModeIsActive()){
+            // Dario or Camilo
+            if ((MANIPULATOR & 0b110) > 0) {
+                if (APress && !gamepad1.a) {
+                    APress = false;
+                }
+
+                if (!APress && gamepad1.a) {
+                    extend_horiz.setPower(0);
+                    break;
+                }
+            }
+
+
             // Allow the driver to interact while picking up
             drive(stp);
 
             // Fun math to figure out whether we will overstep bounds and possibly break the bot by continuing
-            float val = gamepad1.left_stick_y;
+            float val = -gamepad1.left_stick_y; // Invert it
             int pos = extend_horiz.getCurrentPosition();
 
             // If manipulator requests to stop moving the arm
@@ -369,21 +423,25 @@ public class RunFullTeleOp extends LinearOpMode
                 }
             }
 
-            // Stop if A released
-            // TODO: Consider toggling with A instead of having to hold A
-            if (!gamepad1.a){
-                extend_horiz.setPower(0);
-                break;
+            if (MANIPULATOR == 1) {
+                // Stop if A released
+                if (!gamepad1.a) {
+                    extend_horiz.setPower(0);
+                    break;
+                }
             }
 
-            // B button is now for lowering the pivot
-            if (gamepad1.b){
+            // Camilo likes pivot to be X
+            if ((MANIPULATOR == 4)? gamepad1.x : gamepad1.b){
                 // Fun stuff to have the button toggle what it does every press
                 if (!buttonToggle1){
                     buttonToggle1 = true;
 
                     if (!buttonState1){
                         buttonState1 = true;
+
+                        // Unclamp if lowering
+                        //Clamp(false);
 
                         // On first press:
                         PivotPos(2);
@@ -398,8 +456,8 @@ public class RunFullTeleOp extends LinearOpMode
                 buttonToggle1 = false;
             }
 
-            // X button now for clamping
-            if (gamepad1.x){
+            // Camilo likes clamp to be B
+            if ((MANIPULATOR == 4)? gamepad1.b : gamepad1.x){
                 // More fun stuff to have the button toggle what it does every press
                 if (!buttonToggle2){
                     buttonToggle2 = true;
@@ -420,7 +478,7 @@ public class RunFullTeleOp extends LinearOpMode
                 buttonToggle2 = false;
             }
         }
-        // End while loop (A was released or OpMode stopped
+        // End while loop (A was released or OpMode stopped)
 
         // Just in case. We don't want to move any motors after the OpMode is requested to be stopped
         if (!opModeIsActive()){
@@ -502,7 +560,7 @@ public class RunFullTeleOp extends LinearOpMode
         max = Math.max(max, Math.abs(rightBackPower));
 
         // Allow speed to be slowed based on pressure put on the left trigger
-        max *= gamepad2.left_trigger*2+1;
+        max *= 3-(gamepad2.left_trigger*2);
 
         if (max > 1.0) {
             leftFrontPower  /= max;
@@ -528,7 +586,7 @@ public class RunFullTeleOp extends LinearOpMode
     /// Run actions based on buttons pressed on Manipulator's controller
     void doActions(int[] stp){
         if (Qol.checkButton(gamepad1.a, "a")){
-            if (isToggled("a") || gamepad1.right_trigger < 0.5){
+            if (isToggled("a") || gamepad1.right_trigger > 0.5){
                 Extend_Hori(!isToggled("a"));
             } else {
                 ManualExtend(stp);
@@ -556,7 +614,9 @@ public class RunFullTeleOp extends LinearOpMode
         extend_horiz.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         extend_horiz.setPower(-0.3);
         while (!touch.isPressed()){
-            ;
+            if (!opModeIsActive()){
+                return;
+            }
         }
         extend_horiz.setPower(0);
     }
@@ -585,8 +645,9 @@ public class RunFullTeleOp extends LinearOpMode
         // List of id's to remove
         ArrayList<Long> toRemove = new ArrayList<>();
 
-
-        telemetry.addLine("Callbacks:");
+        if (!callbacks.isEmpty()) {
+            telemetry.addLine("Callbacks:");
+        }
         for (Map.Entry<Long, Runnable> entry : callbacks.entrySet()){
             telemetry.addData("\t", "%d: %s", (entry.getKey() - now) / 1000000L, entry.getValue().toString());
 
@@ -605,10 +666,28 @@ public class RunFullTeleOp extends LinearOpMode
     }
 
     void addNeededTelemetry(){
+        switch (MANIPULATOR){
+            //case 1:
+            //    telemetry.addData("Manipulator", "Jacob");
+            //    break;
+            case 2:
+                telemetry.addData("Manipulator", "Dario / Jacob");
+                break;
+            case 4:
+                telemetry.addData("Manipulator", "Camilo");
+                break;
+            default:
+                //noinspection divzero,NumericOverflow
+                telemetry.addData("Could not determine manipulator, please restart robot", 1/0);
+        }
+
         // Might be needed?
         telemetry.addLine("Controller 1: Manipulator");
         telemetry.addLine("Controller 2: Driver");
 
         telemetry.addData("Linear extension:", touch.isPressed() ? "In" : "Out");
+        telemetry.addData("Clamp", isToggled("b")? "Clamped":"Open");
+        telemetry.addData("Lift", isToggled("x")? "Up":"Down");
+        telemetry.addData("Flipper", isToggled("y")? "Flipped": "Not Flipped");
     }
 }
