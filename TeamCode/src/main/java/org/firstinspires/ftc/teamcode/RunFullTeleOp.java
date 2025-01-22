@@ -1,23 +1,17 @@
 package org.firstinspires.ftc.teamcode;
 
-import androidx.annotation.NonNull;
-
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.TouchSensor;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
-import static org.firstinspires.ftc.teamcode.shared.Shared.MoveMotor;
+import static org.firstinspires.ftc.teamcode.shared.Shared.*;
 
 
 // AMain for appearing on top if alphabetical
@@ -54,43 +48,17 @@ public class RunFullTeleOp extends LinearOpMode
         }
     }
 
-    // Move motor proxy to shared code
-    void MoveMotorTel(int where, @NonNull DcMotorEx motor, boolean exact, int vel){
-        MoveMotor(where, motor, exact, vel, telemetry);
-    }
-
-    HashMap<String, Boolean> action1 = new HashMap<>(16);
-
-    ConcurrentHashMap<Long, Runnable> callbacks = new ConcurrentHashMap<>();
-    ConcurrentHashMap<Supplier<Boolean>, Runnable> checking_callbacks = new ConcurrentHashMap<>();
 
     boolean isTrue(Boolean totest){
         return Boolean.TRUE.equals(totest);
     }
 
+    public boolean getOpActive(){
+        return opModeIsActive();
+    }
 
-
-    // Horizontal Extension Motor
-    private DcMotorEx extend_horiz = null;
-    // Vertical Extension Motor
-    private DcMotorEx extend_vert  = null;
-    private Servo pivot = null;
-    private Servo clamp = null;
-    private Servo flip  = null;
-
-
-    // Driving stuff
-    private ElapsedTime runtime = new ElapsedTime();
-    private DcMotor leftFrontDrive = null;
-    private DcMotor leftBackDrive = null;
-    private DcMotor rightFrontDrive = null;
-    private DcMotor rightBackDrive = null;
-
-    private TouchSensor touch = null;
-
-
-    private final int EXTEND_DIFFERENCE = 500;
-    private final int VERTICAL_DIFFERENCE = 1830;
+    // TODO: Calibrate this
+    private static final int LOW_BUCKET_VERTICAL = 224;
 
     @Override public void runOpMode()
     {
@@ -118,49 +86,7 @@ public class RunFullTeleOp extends LinearOpMode
             return;
         }
 
-        // Driving stuff
-        leftFrontDrive  = hardwareMap.get(DcMotor.class, "left_front");
-        leftBackDrive  = hardwareMap.get(DcMotor.class, "left_back");
-        rightFrontDrive = hardwareMap.get(DcMotor.class, "right_front");
-        rightBackDrive = hardwareMap.get(DcMotor.class, "right_back");
-
-        touch = hardwareMap.get(TouchSensor.class, "touch_button");
-
-        int[] startPositions = {
-                leftBackDrive.getCurrentPosition(),
-                rightBackDrive.getCurrentPosition(),
-                leftFrontDrive.getCurrentPosition(),
-                rightFrontDrive.getCurrentPosition()
-        };
-
-        leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
-        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
-
-
-        // Initialize the hardware variables. Note that the strings used here as parameters
-        // to 'get' must match the names assigned during the robot configuration.
-        // step (using the FTC Robot Controller app on the phone).
-        pivot = hardwareMap.get(Servo.class, "pivot_servo");
-        // Vertical: 0.82
-        pivot.scaleRange(0.015, 0.87);
-        //pivot.setDirection(Servo.Direction.REVERSE);
-        clamp = hardwareMap.get(Servo.class, "clamp_servo");
-        clamp.scaleRange(0.6, 0.85);
-        flip  = hardwareMap.get(Servo.class, "flipper_servo");
-        flip.scaleRange(0.16, 1);
-
-        extend_horiz  =  hardwareMap.get(DcMotorEx.class, "extend_horizontal");
-        extend_vert   =  hardwareMap.get(DcMotorEx.class, "extend_vertical");
-
-        //telemetry.addData(">", "Touch START to Initialize.");
-        //telemetry.update();
-        //waitForStart();
-
-
-        extend_horiz.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-        extend_vert.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+        hardwareInit(hardwareMap, telemetry, this::getOpActive);
 
         telemetry.addLine("Controller 1: Manipulator");
         telemetry.addLine("Controller 2: Driver");
@@ -173,18 +99,15 @@ public class RunFullTeleOp extends LinearOpMode
 
         initMotors();
 
-        extend_horiz.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-        extend_vert.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-
         ResetPivot();
 
         while (opModeIsActive())
         {
             addNeededTelemetry();
 
-            drive(startPositions);
+            drive();
 
-            doActions(startPositions);
+            doActions();
 
             runCallbacks();
 
@@ -194,159 +117,9 @@ public class RunFullTeleOp extends LinearOpMode
         }
     }
 
-
-    /// Vertical extension
-    void Extend_Vert(boolean up){
-        if (up){
-            action1.put("x", true);
-
-            // Safeties:
-            // Are we currently horizontally retracted?
-            if (!isToggled("a")){
-                // Unclamp in case driver forgot to
-                Clamp(false);
-
-                //sleep(10);
-
-                // Move the Clamp out of the way
-                //ResetPivot();
-
-                // Move clamp away in 10 millis
-                registerCallback(this::ResetPivot, 10);
-
-                // Extend up in 100 Millis
-                registerCallback(() -> MoveMotorTel(VERTICAL_DIFFERENCE, extend_vert, true, 7000), 100);
-            } else {
-                // Extend up
-                MoveMotorTel(VERTICAL_DIFFERENCE, extend_vert, true, 7000);
-
-                // Uncomment to slow down the bot a bit but make it so that you can't flip while the arm is still rising
-                //sleep(200);
-            }
-        } else {
-            action1.put("x", false);
-
-            // Down again
-            MoveMotorTel(0, extend_vert, true, 1500);
-
-            // Safety unflip during lower
-            Flip(false);
-
-            // Move the Clamp out of the way
-            ResetPivot();
-        }
-    }
-
-
-    /// Horizontal extension
-    void Extend_Hori(boolean goout){
-        if (goout){
-            action1.put("a", true);
-
-            // Open clamp
-            Clamp(false);
-
-            // Pivot down
-            PivotPos(2);
-            // Extend
-            MoveMotorTel(EXTEND_DIFFERENCE, extend_horiz, true, 2000);
-        } else {
-            action1.put("a", false);
-
-//            if (isToggled("x")){
-//                // Quickly Bring bucket down
-//                Extend_Vert(false);
-//                //MoveMotorTel(0, extend_vert, true, 2500);
-//                //action1.put("x", Boolean.FALSE);
-//            }
-
-            // Pivot up
-            PivotPos(1);
-            // Retract
-            MoveMotorTel(0, extend_horiz, true, 2000);
-
-            // Delay
-            //sleep(750);
-
-            // Unclamp
-            //Clamp(false);
-
-            // Unclamp in 750 ms
-            //registerCallback(() -> Clamp(false), 750);
-            registerCheckingCallback(() -> Clamp(false), () -> touch.isPressed());
-        }
-    }
-
-    /// Clamp the clamp
-    void Clamp(boolean on){
-        if (on){
-            action1.put("b", true);
-            // Clamp
-            clamp.setPosition(0);
-        } else {
-            action1.put("b", false);
-            // Unclamp
-            clamp.setPosition(1);
-        }
-    }
-
-
-    /// Flip the flipper
-    void Flip(boolean up){
-        if (up){
-            // Don't flip while lowered
-            if (isToggled("x")){
-                action1.put("y", true);
-                // Flip
-                flip.setPosition(1);
-
-                //Extend_Hori(false);
-                //ResetPivot();
-            } else {
-                telemetry.addLine("Won't flip while lowered.");
-            }
-        } else {
-            action1.put("y", false);
-            // Unflip
-            flip.setPosition(0);
-        }
-    }
-
-    /// Easier to read way of checking if a button is toggled
-    boolean isToggled(String value){
-        return isTrue(action1.get(value));
-    }
-
-    /// Reset the pivot to a "good" position
-    void ResetPivot(){
-        PivotPos(0);
-    }
-
-    /// Set the pivot to a position
-    void PivotPos(int position){
-        switch (position) {
-            case 0:
-                pivot.setPosition(0.65);
-                break;
-            case 1:
-                pivot.setPosition(1);
-                break;
-            case 2:
-                pivot.setPosition(0);
-                break;
-            case 3:
-                pivot.setPosition(0.2);
-                break;
-            default:
-                // Crash program so we can see where this was called from
-                //noinspection divzero,NumericOverflow
-                telemetry.addData("Error: Invalid Pivot position", "%d", 1/0);
-        }
-    }
-
     /// Manual Linear Extension. Kind of like it's own mini OpMode
     // TODO: Consider using stick pos as extension progress
-    void ManualExtend(int[] stp){
+    void ManualExtend(){
         // Initialize button states and toggles.
         // It would be overkill to use another HashMap here
         boolean buttonState1  = false, buttonState2  = false;
@@ -354,7 +127,7 @@ public class RunFullTeleOp extends LinearOpMode
 
         boolean APress = true;
 
-        action1.put("a", true);
+        actions.put("a", true);
 
         Extend_Vert(false);
 
@@ -378,7 +151,7 @@ public class RunFullTeleOp extends LinearOpMode
 
 
             // Allow the driver to interact while picking up
-            drive(stp);
+            drive();
 
             // Fun math to figure out whether we will overstep bounds and possibly break the bot by continuing
             float val = -gamepad1.left_stick_y; // Invert it
@@ -489,11 +262,11 @@ public class RunFullTeleOp extends LinearOpMode
             registerCallback(() -> Extend_Hori(false), 300);
         }
 
-        action1.put("a", false);
+        actions.put("a", false);
     }
 
     /// Shortened and slightly modified drive from OmniLinearOpMode
-    void drive(@NonNull int[] startPositions){
+    void drive(){
         // Well, I guess they DO have copyright... so for this function:
 
         /* Copyright (c) 2021 FIRST. All rights reserved.
@@ -526,10 +299,10 @@ public class RunFullTeleOp extends LinearOpMode
          */
 
         int[] positions = {
-                leftBackDrive.getCurrentPosition() - startPositions[0],
-                rightBackDrive.getCurrentPosition() - startPositions[1],
-                leftFrontDrive.getCurrentPosition() - startPositions[2],
-                rightFrontDrive.getCurrentPosition() - startPositions[3]
+                leftBackDrive.getCurrentPosition() - motorStartPositions[0],
+                rightBackDrive.getCurrentPosition() - motorStartPositions[1],
+                leftFrontDrive.getCurrentPosition() - motorStartPositions[2],
+                rightFrontDrive.getCurrentPosition() - motorStartPositions[3]
         };
 
         double max;
@@ -576,12 +349,12 @@ public class RunFullTeleOp extends LinearOpMode
 
 
     /// Run actions based on buttons pressed on Manipulator's controller
-    void doActions(int[] stp){
+    void doActions(){
         if (Qol.checkButton(gamepad1.a, "a")){
             if (isToggled("a") || gamepad1.right_trigger > 0.5){
                 Extend_Hori(!isToggled("a"));
             } else {
-                ManualExtend(stp);
+                ManualExtend();
             }
         }
         if (Qol.checkButton(gamepad1.b, "b"))
@@ -595,95 +368,6 @@ public class RunFullTeleOp extends LinearOpMode
     }
 
 
-    /// Initialize servos to start position to hold them there
-    void initMotors(){
-        // Pivot reset position
-        ResetPivot();
-
-        // Flip reset position
-        Flip(false);
-
-        extend_horiz.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        extend_horiz.setPower(-0.3);
-        while (!touch.isPressed()){
-            if (!opModeIsActive()){
-                return;
-            }
-        }
-        extend_horiz.setPower(0);
-    }
-
-
-    // Callbacks
-
-    /// Register a callback to be ran later
-    void registerCallback(Runnable callback, int delayMillis){
-        // Get current time in nanoseconds
-        long now = runtime.nanoseconds();
-
-        // Calculate when the callback should be run
-        long runwhen = now + (delayMillis * 1000000L);
-
-        // Add it to the callbacks HashMap
-        callbacks.put(runwhen, callback);
-    }
-
-    /// Register a callback to be ran later
-    void registerCheckingCallback(Runnable callback, Supplier<Boolean> check){
-        // If check passes, run right now
-        if (check.get()) {
-            callback.run();
-            return;
-        }
-
-        // Add it to the callbacks HashMap
-        checking_callbacks.put(check, callback);
-    }
-
-
-    /// Run and delete all callbacks that have expired
-    void runCallbacks(){
-        // Get current (run)time in nanoseconds
-        long now = runtime.nanoseconds();
-
-        // List of id's to remove
-        ArrayList<Long> toRemove = new ArrayList<>();
-        ArrayList<Supplier<Boolean>> toRemoveCheck = new ArrayList<>();
-
-        if (!callbacks.isEmpty()) {
-            telemetry.addLine("Callbacks:");
-        }
-        for (Map.Entry<Long, Runnable> entry : callbacks.entrySet()){
-            telemetry.addData("\t", "%d: %s", (entry.getKey() - now) / 1000000L, entry.getValue().toString());
-
-            // Check if time has expired
-            if (entry.getKey() - now <= 0) {
-                // Run the callback
-                entry.getValue().run();
-
-                toRemove.add(entry.getKey());
-            }
-        }
-
-        for (long id : toRemove){
-            callbacks.remove(id);
-        }
-
-        for (Map.Entry<Supplier<Boolean>, Runnable> entry : checking_callbacks.entrySet()){
-            telemetry.addData("\t", "%s: %s", entry.getKey().toString(), entry.getValue().toString());
-
-            if (entry.getKey().get()) {
-                // Run the callback
-                entry.getValue().run();
-
-                toRemoveCheck.add(entry.getKey());
-            }
-        }
-
-        for (Supplier<Boolean> id : toRemoveCheck){
-            checking_callbacks.remove(id);
-        }
-    }
 
     void addNeededTelemetry(){
         switch (MANIPULATOR){
