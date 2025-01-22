@@ -147,11 +147,11 @@ public class Shared {
     /// Vertical extension
     public static void Extend_Vert(boolean up){
         if (up){
-            actions.put("x", true);
+            actions.put("vert", true);
 
             // Safeties:
             // Are we currently horizontally retracted?
-            if (!isToggled("a")){
+            if (!isToggled("horiz")){
                 // Unclamp in case driver forgot to
                 Clamp(false);
 
@@ -173,7 +173,7 @@ public class Shared {
                 //sleep(200);
             }
         } else {
-            actions.put("x", false);
+            actions.put("vert", false);
 
             // Down again
             MoveMotor(0, extend_vert, true, 1500);
@@ -190,7 +190,7 @@ public class Shared {
     /// Horizontal extension
     public static void Extend_Hori(boolean goout){
         if (goout){
-            actions.put("a", true);
+            actions.put("horiz", true);
 
             // Open clamp
             Clamp(false);
@@ -200,13 +200,13 @@ public class Shared {
             // Extend
             MoveMotor(EXTEND_DIFFERENCE, extend_horiz, true, 2000);
         } else {
-            actions.put("a", false);
+            actions.put("horiz", false);
 
-//            if (isToggled("x")){
+//            if (isToggled("vert")){
 //                // Quickly Bring bucket down
 //                Extend_Vert(false);
 //                //MoveMotorTel(0, extend_vert, true, 2500);
-//                //actions.put("x", Boolean.FALSE);
+//                //actions.put("vert", Boolean.FALSE);
 //            }
 
             // Pivot up
@@ -229,11 +229,11 @@ public class Shared {
     /// Clamp the clamp
     public static void Clamp(boolean on){
         if (on){
-            actions.put("b", true);
+            actions.put("clamp", true);
             // Clamp
             clamp.setPosition(0);
         } else {
-            actions.put("b", false);
+            actions.put("clamp", false);
             // Unclamp
             clamp.setPosition(1);
         }
@@ -244,8 +244,8 @@ public class Shared {
     public static void Flip(boolean up){
         if (up){
             // Don't flip while lowered
-            if (isToggled("x")){
-                actions.put("y", true);
+            if (isToggled("vert")){
+                actions.put("flip", true);
                 // Flip
                 flip.setPosition(1);
 
@@ -255,7 +255,7 @@ public class Shared {
                 telemetry.addLine("Won't flip while lowered.");
             }
         } else {
-            actions.put("y", false);
+            actions.put("flip", false);
             // Unflip
             flip.setPosition(0);
         }
@@ -283,6 +283,7 @@ public class Shared {
         extend_horiz.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
         extend_vert.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
     }
+
 
 
     // Callbacks

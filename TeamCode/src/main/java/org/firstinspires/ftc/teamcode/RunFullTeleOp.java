@@ -390,8 +390,8 @@ public class RunFullTeleOp extends LinearOpMode
         telemetry.addLine("Controller 2: Driver");
 
         telemetry.addData("Linear extension:", touch.isPressed() ? "In" : "Out");
-        telemetry.addData("Clamp", isToggled("b")? "Clamped":"Open");
-        telemetry.addData("Lift", isToggled("x")? "Up":"Down");
-        telemetry.addData("Flipper", isToggled("y")? "Flipped": "Not Flipped");
+        telemetry.addData("Clamp", isToggled("clamp")? "Clamped":"Open");
+        telemetry.addData("Lift", isToggled("vert")? "Up":"Down");
+        telemetry.addData("Flipper", isToggled("flip")? "Flipped": "Not Flipped");
     }
 }
