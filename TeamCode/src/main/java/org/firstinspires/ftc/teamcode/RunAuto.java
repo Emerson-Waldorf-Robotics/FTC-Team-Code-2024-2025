@@ -31,17 +31,40 @@ public class RunAuto extends OpMode {
     private AprilTagProcessor aprilTag;              // Used for managing the AprilTag detection process.
     private AprilTagDetection desiredTag = null;     // Used to hold the data for a detected AprilTag
 
-    void forward(int howmuch, double vel){
-        int leftFrontCurr = leftFrontDrive.getCurrentPosition();
-        int leftBackCurr = leftBackDrive.getCurrentPosition();
-        int rightFrontCurr = rightFrontDrive.getCurrentPosition();
-        int rightBackCurr = rightBackDrive.getCurrentPosition();
+    private int[] motpos = {
+            0,
+            0,
+            0,
+            0
+    };
 
+    void forward(int howmuch){
+        motpos[0] += howmuch;
+        motpos[1] += howmuch;
+        motpos[2] += howmuch;
+        motpos[3] += howmuch;
+    }
 
-        leftFrontDrive.setTargetPosition(leftFrontCurr + howmuch);
-        leftBackDrive.setTargetPosition(leftBackCurr + howmuch);
-        rightFrontDrive.setTargetPosition(rightFrontCurr + howmuch);
-        rightBackDrive.setTargetPosition(rightBackCurr + howmuch);
+    void backwards(int howmuch){
+        forward(-howmuch);
+    }
+
+    void turnRight(int degrees){
+        turnLeft(-degrees);
+    }
+
+    void turnLeft(int degrees){
+        motpos[0] += degrees;
+        motpos[1] += degrees;
+        motpos[2] -= degrees;
+        motpos[3] -= degrees;
+    }
+
+    void motoGO(double vel){
+        leftFrontDrive.setTargetPosition(motpos[0]);
+        leftBackDrive.setTargetPosition(motpos[1]);
+        rightFrontDrive.setTargetPosition(motpos[2]);
+        rightBackDrive.setTargetPosition(motpos[3]);
 
         leftFrontDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         leftBackDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -54,35 +77,8 @@ public class RunAuto extends OpMode {
         rightFrontDrive.setVelocity(vel);
     }
 
-    void backwards(int howmuch, double vel){
-        forward(-howmuch, vel);
-    }
-
-    void turnRight(int degrees, double vel){
-        turnLeft(-degrees, vel);
-    }
-
-    void turnLeft(int degrees, double vel){
-        int leftFrontCurr = leftFrontDrive.getCurrentPosition();
-        int leftBackCurr = leftBackDrive.getCurrentPosition();
-        int rightFrontCurr = rightFrontDrive.getCurrentPosition();
-        int rightBackCurr = rightBackDrive.getCurrentPosition();
-
-        leftFrontDrive.setTargetPosition(degrees + leftFrontCurr);
-        leftBackDrive.setTargetPosition(degrees + leftBackCurr);
-        rightFrontDrive.setTargetPosition(-degrees + rightFrontCurr);
-        rightBackDrive.setTargetPosition(-degrees + rightBackCurr);
-
-        leftFrontDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        leftBackDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        rightBackDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        rightFrontDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-        leftFrontDrive.setVelocity(vel);
-        leftBackDrive.setVelocity(vel);
-        rightBackDrive.setVelocity(vel);
-        rightFrontDrive.setVelocity(vel);
-
+    void waitMoveDone(){
+        while (leftFrontDrive.isBusy() || leftBackDrive.isBusy() || rightBackDrive.isBusy() || rightFrontDrive.isBusy()) {}
     }
 
 
@@ -157,8 +153,14 @@ public class RunAuto extends OpMode {
 
         hardwareInit(hardwareMap, telemetry, () -> true);
 
+        leftFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftBackDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightBackDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
         // Wait for the game to start (driver presses START)
-        telemetry.addData("Status", "Initialized");
+        telemetry.addData("Status", "Ready");
+        telemetry.addLine("Press START to Auto");
         telemetry.update();
     }
 
@@ -175,8 +177,20 @@ public class RunAuto extends OpMode {
 
         initMotors();
 
-        backwards(500, 500);
-        turnLeft(500, 500);
+        backwards(500);
+
+        //motoGO(500);
+        //waitMoveDone();
+
+        turnLeft(450);
+
+        motoGO(500);
+
+        try {
+            sleep(50);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
         Extend_Vert(true);
 
