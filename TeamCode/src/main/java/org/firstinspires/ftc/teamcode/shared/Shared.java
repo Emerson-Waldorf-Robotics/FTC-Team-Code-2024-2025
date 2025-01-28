@@ -77,7 +77,9 @@ public class Shared {
 
         // Initialize the hardware variables.
         pivot = hardwareMap.get(Servo.class, "pivot_servo");
-        pivot.scaleRange(0.015, 0.87);
+        //pivot.scaleRange(0.015, 0.87);
+        //pivot.scaleRange(0, 0.8);
+        pivot.scaleRange(0, 0.71);
 
         clamp = hardwareMap.get(Servo.class, "clamp_servo");
         clamp.scaleRange(0.6, 0.85);
@@ -125,15 +127,19 @@ public class Shared {
     public static void PivotPos(int position){
         switch (position) {
             case 0:
+                // Ready
                 pivot.setPosition(0.65);
                 break;
             case 1:
+                // Up
                 pivot.setPosition(1);
                 break;
             case 2:
+                // DOwn
                 pivot.setPosition(0);
                 break;
             case 3:
+                // Close to down
                 pivot.setPosition(0.2);
                 break;
         }
@@ -222,7 +228,8 @@ public class Shared {
 
             // Unclamp in 750 ms
             //registerCallback(() -> Clamp(false), 750);
-            registerCheckingCallback(() -> Clamp(false), () -> touch.isPressed());
+            // TODO: Cursed
+            registerCheckingCallback(() -> registerCallback(() -> Clamp(false), 500), () -> touch.isPressed());
         }
     }
 
@@ -271,7 +278,7 @@ public class Shared {
         Flip(false);
 
         extend_horiz.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        extend_horiz.setPower(-0.3);
+        extend_horiz.setPower(-0.5);
         while (!touch.isPressed()){
             if (!opModeIsActive.get()){
                 return;
@@ -354,5 +361,75 @@ public class Shared {
         for (Supplier<Boolean> id : toRemoveCheck){
             checking_callbacks.remove(id);
         }
+    }
+
+    // Automatic Movement
+    public static final int[] motpos = {
+            // LFront
+            0,
+            // LBack
+            0,
+            // RFront
+            0,
+            // RBack
+            0
+    };
+
+    public static void forward(int howmuch){
+        motpos[0] += howmuch;
+        motpos[1] += howmuch;
+        motpos[2] += howmuch;
+        motpos[3] += howmuch;
+    }
+
+    public static void backwards(int howmuch){
+        forward(-howmuch);
+    }
+
+    public static void turnRight(int degrees){
+        turnLeft(-degrees);
+    }
+
+    public static void turnLeft(int degrees){
+        motpos[0] += degrees;
+        motpos[1] += degrees;
+        motpos[2] -= degrees;
+        motpos[3] -= degrees;
+    }
+
+    public static void strafeRight(int howmuch){
+        motpos[0] += howmuch;
+        motpos[1] -= howmuch;
+        motpos[2] -= howmuch;
+        motpos[3] += howmuch;
+    }
+
+    public static void strafeLeft(int howmuch){
+        strafeRight(-howmuch);
+    }
+
+    public static void motoGO(double vel){
+        leftFrontDrive.setTargetPosition(motpos[0]);
+        leftBackDrive.setTargetPosition(motpos[1]);
+        rightFrontDrive.setTargetPosition(motpos[2]);
+        rightBackDrive.setTargetPosition(motpos[3]);
+
+        leftFrontDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        leftBackDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        rightBackDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        rightFrontDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        leftFrontDrive.setVelocity(vel);
+        leftBackDrive.setVelocity(vel);
+        rightBackDrive.setVelocity(vel);
+        rightFrontDrive.setVelocity(vel);
+    }
+
+    public static void waitMoveDone(){
+        while (motorBusy()) {}
+    }
+
+    public static boolean motorBusy(){
+        return leftFrontDrive.isBusy() || leftBackDrive.isBusy() || rightBackDrive.isBusy() || rightFrontDrive.isBusy();
     }
 }

@@ -7,9 +7,6 @@ import static java.lang.Thread.sleep;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.TouchSensor;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
@@ -18,10 +15,7 @@ import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
-import java.util.ArrayList;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 @Autonomous(name = "Auto OpMode", group = "Auto")
 public class RunAuto extends OpMode {
@@ -30,56 +24,6 @@ public class RunAuto extends OpMode {
     private VisionPortal visionPortal;               // Used to manage the video source.
     private AprilTagProcessor aprilTag;              // Used for managing the AprilTag detection process.
     private AprilTagDetection desiredTag = null;     // Used to hold the data for a detected AprilTag
-
-    private int[] motpos = {
-            0,
-            0,
-            0,
-            0
-    };
-
-    void forward(int howmuch){
-        motpos[0] += howmuch;
-        motpos[1] += howmuch;
-        motpos[2] += howmuch;
-        motpos[3] += howmuch;
-    }
-
-    void backwards(int howmuch){
-        forward(-howmuch);
-    }
-
-    void turnRight(int degrees){
-        turnLeft(-degrees);
-    }
-
-    void turnLeft(int degrees){
-        motpos[0] += degrees;
-        motpos[1] += degrees;
-        motpos[2] -= degrees;
-        motpos[3] -= degrees;
-    }
-
-    void motoGO(double vel){
-        leftFrontDrive.setTargetPosition(motpos[0]);
-        leftBackDrive.setTargetPosition(motpos[1]);
-        rightFrontDrive.setTargetPosition(motpos[2]);
-        rightBackDrive.setTargetPosition(motpos[3]);
-
-        leftFrontDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        leftBackDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        rightBackDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        rightFrontDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-        leftFrontDrive.setVelocity(vel);
-        leftBackDrive.setVelocity(vel);
-        rightBackDrive.setVelocity(vel);
-        rightFrontDrive.setVelocity(vel);
-    }
-
-    void waitMoveDone(){
-        while (leftFrontDrive.isBusy() || leftBackDrive.isBusy() || rightBackDrive.isBusy() || rightFrontDrive.isBusy()) {}
-    }
 
 
     // TODO: Calibrate this
@@ -177,12 +121,12 @@ public class RunAuto extends OpMode {
 
         initMotors();
 
-        backwards(500);
+        backwards(450);
 
         //motoGO(500);
         //waitMoveDone();
 
-        turnLeft(450);
+        turnLeft(350);
 
         motoGO(500);
 

@@ -26,7 +26,7 @@ public class ServoTest extends LinearOpMode
 
 
         pivot = hardwareMap.get(Servo.class, "pivot_servo");
-        pivot.scaleRange(0.015, 0.87);
+        pivot.scaleRange(0, 0.71);
         //pivot.setDirection(Servo.Direction.REVERSE);
         //pivot.setDirection(Servo.Direction.REVERSE);
 

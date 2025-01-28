@@ -2,14 +2,9 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
 
 import static org.firstinspires.ftc.teamcode.shared.Shared.*;
 
@@ -18,6 +13,8 @@ import static org.firstinspires.ftc.teamcode.shared.Shared.*;
 @TeleOp(name="Run TeleOp", group = "AMain")
 public class RunFullTeleOp extends LinearOpMode
 {
+    private boolean speeding = false;
+
     /** Manipulator:
      * 0: Invalid
      * 1: Jacob
@@ -127,7 +124,7 @@ public class RunFullTeleOp extends LinearOpMode
 
         boolean APress = true;
 
-        actions.put("a", true);
+        actions.put("horiz", true);
 
         Extend_Vert(false);
 
@@ -251,7 +248,7 @@ public class RunFullTeleOp extends LinearOpMode
         }
 
         // Check if we are already clamped on
-        if (isToggled("b")){
+        if (isToggled("clamp")){
             // Bring the Linear Extension Back in
             Extend_Hori(false);
         } else {
@@ -262,7 +259,7 @@ public class RunFullTeleOp extends LinearOpMode
             registerCallback(() -> Extend_Hori(false), 300);
         }
 
-        actions.put("a", false);
+        actions.put("horiz", false);
     }
 
     /// Shortened and slightly modified drive from OmniLinearOpMode
@@ -334,13 +331,32 @@ public class RunFullTeleOp extends LinearOpMode
             rightBackPower  /= max;
         }
 
-        // Send calculated power to wheels
-        leftFrontDrive.setPower(leftFrontPower);
-        rightFrontDrive.setPower(rightFrontPower);
-        leftBackDrive.setPower(leftBackPower);
-        rightBackDrive.setPower(rightBackPower);
+        if (speeding){
+            if (leftBackPower != 0 || leftFrontPower != 0 || rightBackPower != 0 || rightFrontPower != 0){
+                // Send calculated power to wheels
+                leftFrontDrive.setPower(leftFrontPower);
+                rightFrontDrive.setPower(rightFrontPower);
+                leftBackDrive.setPower(leftBackPower);
+                rightBackDrive.setPower(rightBackPower);
+                speeding = false;
+            }
+            if (gamepad2.y){
+                // Send calculated power to wheels
+                leftFrontDrive.setPower(0);
+                rightFrontDrive.setPower(0);
+                leftBackDrive.setPower(0);
+                rightBackDrive.setPower(0);
+                speeding = false;
+            }
+        } else {
+            // Send calculated power to wheels
+            leftFrontDrive.setPower(leftFrontPower);
+            rightFrontDrive.setPower(rightFrontPower);
+            leftBackDrive.setPower(leftBackPower);
+            rightBackDrive.setPower(rightBackPower);
+        }
 
-        telemetry.addData("Status", "Run Time: " + runtime.toString());
+        telemetry.addData("Status", "Run Time: " + runtime);
         telemetry.addData("Front left/Right", "%4.2f, %4.4f", leftFrontPower, rightFrontPower);
         telemetry.addData("Back  left/Right", "%4.2f, %4.4f", leftBackPower, rightBackPower);
         telemetry.addData("Back Encoder l/r", "%d, %d", positions[0], positions[1]);
@@ -351,20 +367,23 @@ public class RunFullTeleOp extends LinearOpMode
     /// Run actions based on buttons pressed on Manipulator's controller
     void doActions(){
         if (Qol.checkButton(gamepad1.a, "a")){
-            if (isToggled("a") || gamepad1.right_trigger > 0.5){
-                Extend_Hori(!isToggled("a"));
+            if (isToggled("horiz") || gamepad1.right_trigger > 0.5){
+                Extend_Hori(!isToggled("horiz"));
             } else {
                 ManualExtend();
             }
         }
         if (Qol.checkButton(gamepad1.b, "b"))
-            Clamp(!isToggled("b"));
+            Clamp(!isToggled("clamp"));
 
         if (Qol.checkButton(gamepad1.x, "x"))
-            Extend_Vert(!isToggled("x"));
+            Extend_Vert(!isToggled("vert"));
 
         if (Qol.checkButton(gamepad1.y, "y"))
-            Flip(!isToggled("y"));
+            Flip(!isToggled("flip"));
+
+        if (Qol.checkButton(gamepad2.a, "a2"))
+            Speed();
     }
 
 
@@ -393,5 +412,40 @@ public class RunFullTeleOp extends LinearOpMode
         telemetry.addData("Clamp", isToggled("clamp")? "Clamped":"Open");
         telemetry.addData("Lift", isToggled("vert")? "Up":"Down");
         telemetry.addData("Flipper", isToggled("flip")? "Flipped": "Not Flipped");
+    }
+
+    void Speed(){
+        double leftFrontPower  = -0.5 + 1;
+        double rightFrontPower = -0.5 - 1;
+        double leftBackPower   = -0.5 - 1;
+        double rightBackPower  = -0.5 + 1;
+
+        double max;
+
+
+        // Normalize the values so no wheel power exceeds 100%
+        // This ensures that the robot maintains the desired motion.
+        max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
+        max = Math.max(max, Math.abs(leftBackPower));
+        max = Math.max(max, Math.abs(rightBackPower));
+
+        // Allow speed to be slowed based on pressure put on the left trigger
+        //max *= 3-(gamepad2.left_trigger*2);
+
+        if (max > 1.0) {
+            leftFrontPower  /= max;
+            rightFrontPower /= max;
+            leftBackPower   /= max;
+            rightBackPower  /= max;
+        }
+
+        // Send calculated power to wheels
+        leftFrontDrive.setPower(leftFrontPower);
+        rightFrontDrive.setPower(rightFrontPower);
+        leftBackDrive.setPower(leftBackPower);
+        rightBackDrive.setPower(rightBackPower);
+
+        speeding = true;
+        //registerCheckingCallback(() -> );
     }
 }
