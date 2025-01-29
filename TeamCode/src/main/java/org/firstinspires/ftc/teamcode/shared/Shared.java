@@ -40,10 +40,10 @@ public class Shared {
     public static final int VERTICAL_DIFFERENCE = 1830;
 
 
-    public static HashMap<String, Boolean> actions = new HashMap<>(16);
+    public static HashMap<String, Boolean> actions = null;
 
-    public static ConcurrentHashMap<Long, Runnable> callbacks = new ConcurrentHashMap<>();
-    public static ConcurrentHashMap<Supplier<Boolean>, Runnable> checking_callbacks = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<Long, Runnable> callbacks = null;
+    public static ConcurrentHashMap<Supplier<Boolean>, Runnable> checking_callbacks = null;
 
 
     private static Telemetry telemetry = null;
@@ -51,6 +51,17 @@ public class Shared {
     private static Supplier<Boolean> opModeIsActive = null;
 
     public static void hardwareInit(HardwareMap hardwareMap, Telemetry tel, Supplier<Boolean> op) {
+        // Initalize Callbacks (Fix HUGE bug where callbacks persist through opmodes)
+        callbacks          = new ConcurrentHashMap<>();
+        checking_callbacks = new ConcurrentHashMap<>();
+
+        // Reset runtime too
+        runtime.reset();
+
+        // Probably a good idea to re-init a few other things too
+        actions = new HashMap<>(16);
+
+
         telemetry = tel;
         opModeIsActive = op;
 
