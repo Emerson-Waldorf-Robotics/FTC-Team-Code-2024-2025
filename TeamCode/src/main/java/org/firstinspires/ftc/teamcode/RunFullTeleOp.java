@@ -24,7 +24,7 @@ public class RunFullTeleOp extends LinearOpMode
     private char MANIPULATOR = 0;
 
     static class Qol {
-        // Last button position
+        /// Last button position
         static HashMap<String, Boolean> buttonStates = new HashMap<>(4);
 
 
