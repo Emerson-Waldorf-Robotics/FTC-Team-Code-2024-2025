@@ -40,8 +40,10 @@ public class Shared {
 
     public static int[] motorStartPositions = null;
 
-    public static final int EXTEND_DIFFERENCE = 500;
-    public static final int VERTICAL_DIFFERENCE = 1870;
+    public static final int EXTEND_DIFFERENCE   = 500;
+    public static final int VERTICAL_DIFFERENCE = 1860;
+
+    public static final int LOW_BUCKET          = 900;
 
 
     public static HashMap<String, Boolean> actions = null;
@@ -168,7 +170,7 @@ public class Shared {
     }
 
     /// Vertical extension
-    public static void Extend_Vert(boolean up){
+    public static void Extend_Vert(boolean up, boolean full){
         if (up){
             actions.put("vert", true);
 
@@ -187,10 +189,10 @@ public class Shared {
                 registerCallback(Shared::ResetPivot, 10);
 
                 // Extend up in 100 Millis
-                registerCallback(() -> MoveMotor(VERTICAL_DIFFERENCE, extend_vert, true, 7000), 100);
+                registerCallback(() -> MoveMotor(full?VERTICAL_DIFFERENCE:LOW_BUCKET, extend_vert, true, 7000), 100);
             } else {
                 // Extend up
-                MoveMotor(VERTICAL_DIFFERENCE, extend_vert, true, 7000);
+                MoveMotor(full?VERTICAL_DIFFERENCE:LOW_BUCKET, extend_vert, true, 7000);
 
                 // Uncomment to slow down the bot a bit but make it so that you can't flip while the arm is still rising
                 //sleep(200);

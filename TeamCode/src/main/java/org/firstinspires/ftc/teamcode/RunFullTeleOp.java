@@ -132,7 +132,7 @@ public class RunFullTeleOp extends LinearOpMode
 
         actions.put("horiz", true);
 
-        Extend_Vert(false);
+        Extend_Vert(false, true);
 
         // Open clamp
         Clamp(false);
@@ -406,7 +406,7 @@ public class RunFullTeleOp extends LinearOpMode
             Clamp(!isToggled("clamp"));
 
         if (Qol.checkButton(gamepad1.x, "x"))
-            Extend_Vert(!isToggled("vert"));
+            Extend_Vert(!isToggled("vert"), true);
 
         if (Qol.checkButton(gamepad1.y, "y"))
             Flip(!isToggled("flip"));
@@ -414,6 +414,10 @@ public class RunFullTeleOp extends LinearOpMode
         if (Qol.checkButton(gamepad2.a, "a2"))
             ;
             //Speed();
+
+        if (Qol.checkButton(gamepad1.dpad_up, "dpup")){
+            Extend_Vert(!isToggled("vert"), false);
+        }
     }
 
 

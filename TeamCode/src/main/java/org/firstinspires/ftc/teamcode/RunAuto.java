@@ -145,7 +145,7 @@ public class RunAuto extends OpMode {
         //    throw new RuntimeException(e);
         //}
 
-        Extend_Vert(true);
+        Extend_Vert(true, true);
 
         // Flip when at max height
         registerCheckingCallback(() -> {
@@ -161,7 +161,7 @@ public class RunAuto extends OpMode {
 
         Flip(false);
 
-        Extend_Vert(false);
+        Extend_Vert(false, true);
 
 
         Extend_Hori(true);
