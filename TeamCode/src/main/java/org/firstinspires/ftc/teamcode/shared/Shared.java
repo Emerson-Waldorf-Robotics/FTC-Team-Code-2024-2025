@@ -4,6 +4,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 import androidx.annotation.NonNull;
 
+import com.qualcomm.hardware.dfrobot.HuskyLens;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -34,10 +35,13 @@ public class Shared {
     public static Servo flip  = null;
     public static TouchSensor touch = null;
 
+    //public static HuskyLens Camera = null;
+
+
     public static int[] motorStartPositions = null;
 
     public static final int EXTEND_DIFFERENCE = 500;
-    public static final int VERTICAL_DIFFERENCE = 1830;
+    public static final int VERTICAL_DIFFERENCE = 1870;
 
 
     public static HashMap<String, Boolean> actions = null;
@@ -97,6 +101,8 @@ public class Shared {
 
         flip  = hardwareMap.get(Servo.class, "flipper_servo");
         flip.scaleRange(0.16, 1);
+
+        //Camera = hardwareMap.get(HuskyLens.class, "cam");
 
         extend_horiz  =  hardwareMap.get(DcMotorEx.class, "extend_horizontal");
         extend_vert   =  hardwareMap.get(DcMotorEx.class, "extend_vertical");

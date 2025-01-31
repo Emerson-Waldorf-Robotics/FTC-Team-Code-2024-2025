@@ -4,6 +4,7 @@ import static org.firstinspires.ftc.teamcode.shared.Shared.*;
 
 import static java.lang.Thread.sleep;
 
+import com.qualcomm.hardware.dfrobot.HuskyLens;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -15,6 +16,7 @@ import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 @Autonomous(name = "Auto OpMode", group = "Auto")
@@ -97,6 +99,8 @@ public class RunAuto extends OpMode {
 
         hardwareInit(hardwareMap, telemetry, () -> true);
 
+        //Camera.selectAlgorithm(HuskyLens.Algorithm.OBJECT_TRACKING);
+
         leftFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         leftBackDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -128,17 +132,66 @@ public class RunAuto extends OpMode {
 
         turnLeft(350);
 
-        motoGO(500);
+        //motoGO(1000);
+        //waitMoveDone();
 
-        try {
-            sleep(50);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        //strafeLeft(200);
+
+        motoGO(1000);
+
+        //try {
+        //    sleep(50);
+        //} catch (InterruptedException e) {
+        //    throw new RuntimeException(e);
+        //}
 
         Extend_Vert(true);
 
         // Flip when at max height
-        registerCheckingCallback(() -> Flip(true), () -> (extend_vert.getCurrentPosition() == VERTICAL_DIFFERENCE));
+        registerCheckingCallback(() -> {
+            Flip(true);
+            registerCallback(this::step2, 500);
+        }, () -> (extend_vert.getCurrentPosition() > VERTICAL_DIFFERENCE-20));
+    }
+
+    void step2(){
+        turnLeft(350);
+        forward(100);
+        motoGO(1000);
+
+        Flip(false);
+
+        Extend_Vert(false);
+
+
+        Extend_Hori(true);
+
+        PivotPos(2);
+
+        registerCallback(() -> {
+            Clamp(true);
+            // Clamp callback
+            registerCallback(() -> {
+                // After clamp
+                Extend_Hori(false);
+                // Extend Callback
+                registerCheckingCallback(this::step3, () -> touch.isPressed());
+            }, 250);
+        }, 400);
+    }
+
+    void step3(){
+        PivotPos(1);
+
+
+        Clamp(false);
+
+        turnRight(350);
+        backwards(100);
+        motoGO(1000);
+
+        //telemetry.addLine(Arrays.toString(Camera.blocks(1)));
+        telemetry.update();
+        while(true){}
     }
 }

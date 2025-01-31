@@ -8,6 +8,8 @@ import java.util.HashMap;
 
 import static org.firstinspires.ftc.teamcode.shared.Shared.*;
 
+// TODO: Horiz in should use touch
+
 
 // AMain for appearing on top if alphabetical
 @TeleOp(name="Run TeleOp", group = "AMain")
@@ -117,6 +119,10 @@ public class RunFullTeleOp extends LinearOpMode
     /// Manual Linear Extension. Kind of like it's own mini OpMode
     // TODO: Consider using stick pos as extension progress
     void ManualExtend(){
+
+        // Allow the manipulator to micro the bot
+        boolean driverOverride = false;
+
         // Initialize button states and toggles.
         // It would be overkill to use another HashMap here
         boolean buttonState1  = false, buttonState2  = false;
@@ -147,12 +153,27 @@ public class RunFullTeleOp extends LinearOpMode
             }
 
 
-            // Allow the driver to interact while picking up
-            drive();
+            if (!driverOverride){
+                // Allow the driver to interact while picking up
+                drive();
+            }
 
             // Fun math to figure out whether we will overstep bounds and possibly break the bot by continuing
             float val = -gamepad1.left_stick_y; // Invert it
             int pos = extend_horiz.getCurrentPosition();
+
+            // Allow the Manipulator to do quick micros on the robot position
+            float microval = gamepad1.right_stick_x / 3;
+            if (microval != 0){
+                driverOverride = true;
+                leftFrontDrive.setPower(microval);
+                leftBackDrive.setPower(-microval);
+                rightFrontDrive.setPower(-microval);
+                rightBackDrive.setPower(microval);
+            } else {
+                driverOverride = false;
+            }
+
 
             // If manipulator requests to stop moving the arm
             if (val == 0){
@@ -239,6 +260,14 @@ public class RunFullTeleOp extends LinearOpMode
             } else {
                 buttonToggle2 = false;
             }
+
+            telemetry.addData("ManipulatorOverride", driverOverride);
+
+            telemetry.addLine();
+
+            addNeededTelemetry();
+
+            telemetry.update();
         }
         // End while loop (A was released or OpMode stopped)
 
@@ -383,7 +412,8 @@ public class RunFullTeleOp extends LinearOpMode
             Flip(!isToggled("flip"));
 
         if (Qol.checkButton(gamepad2.a, "a2"))
-            Speed();
+            ;
+            //Speed();
     }
 
 
@@ -425,19 +455,15 @@ public class RunFullTeleOp extends LinearOpMode
 
         // Normalize the values so no wheel power exceeds 100%
         // This ensures that the robot maintains the desired motion.
-        max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
-        max = Math.max(max, Math.abs(leftBackPower));
-        max = Math.max(max, Math.abs(rightBackPower));
+        max = Math.abs(rightFrontPower);
 
         // Allow speed to be slowed based on pressure put on the left trigger
         //max *= 3-(gamepad2.left_trigger*2);
 
-        if (max > 1.0) {
-            leftFrontPower  /= max;
-            rightFrontPower /= max;
-            leftBackPower   /= max;
-            rightBackPower  /= max;
-        }
+        leftFrontPower /= max;
+        rightFrontPower /= max;
+        leftBackPower   /= max;
+        rightBackPower  /= max;
 
         // Send calculated power to wheels
         leftFrontDrive.setPower(leftFrontPower);
