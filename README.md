@@ -1,3 +1,6 @@
+# Archive notice!!!
+## This repo archived as the Competition is over! Great job everyone
+
 ## NOTICE
 
 This repository contains the public FTC SDK for the INTO THE DEEP (2024-2025) competition season.
